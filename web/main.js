@@ -76,7 +76,7 @@ loadLinks().then(links => {
   node.append("circle")
       .attr("r", 30)
       .attr("fill", d => {
-        if (d.id === "apple") return "red"; // Make "apple" red
+        if (d.id === "melon") return "red"; // Make "melon" red
         switch (d.type) {
           case "fruit": return "orange";
           case "vegetable": return "green";
@@ -89,7 +89,7 @@ loadLinks().then(links => {
           default: return "steelblue";
         }
       })
-      .attr("class", d => d.id === "apple" ? "blink" : ""); // Add class for blinking
+      .attr("class", d => d.id === "melon" ? "blink" : ""); // Add class for blinking
 
   node.append("text")
       .text(d => d.id)
