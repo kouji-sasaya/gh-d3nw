@@ -1,6 +1,8 @@
-export function loadLinks() {
-  return d3.text("data.csv").then(raw => {
-    const rows = d3.csvParseRows(raw); // each row: [source, target]
-    return rows.map(([source, target]) => ({ source, target }));
+export async function loadLinks() {
+  const response = await fetch("data.csv");
+  const text = await response.text();
+  return text.split("\n").map(line => {
+    const [source, type, target] = line.split(",");
+    return { source, type, target };
   });
 }
