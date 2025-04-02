@@ -76,6 +76,7 @@ loadLinks().then(links => {
   node.append("circle")
       .attr("r", 30)
       .attr("fill", d => {
+        if (d.id === "apple") return "red"; // Make "apple" red
         switch (d.type) {
           case "fruit": return "orange";
           case "vegetable": return "green";
@@ -87,7 +88,8 @@ loadLinks().then(links => {
           case "fungus": return "gray";
           default: return "steelblue";
         }
-      });
+      })
+      .attr("class", d => d.id === "apple" ? "blink" : ""); // Add class for blinking
 
   node.append("text")
       .text(d => d.id)
@@ -113,3 +115,15 @@ loadLinks().then(links => {
     container.attr("transform", transform);
   }
 });
+
+// Add CSS for blinking effect
+const style = document.createElement("style");
+style.textContent = `
+  .blink {
+    animation: blink-animation 1s infinite;
+  }
+  @keyframes blink-animation {
+    50% { opacity: 0; }
+  }
+`;
+document.head.appendChild(style);
