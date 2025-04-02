@@ -1,0 +1,27 @@
+#!/bin/bash
+if [ "$#" -ne 1 ]; then
+  echo "Usage: $0 {up|down|build|shell}"
+  exit 1
+fi
+
+if [ "$1" = "up" ]; then
+  docker compose up -d
+  exit 0
+fi
+if [ "$1" = "down" ]; then
+  docker compose down
+  exit 0
+fi
+if [ "$1" = "build" ]; then
+  docker compose build
+  exit 0
+fi
+if [ "$1" = "shell" ]; then
+  docker exec -it web sh
+  exit 0
+fi
+
+echo "Invalid option: $1"
+echo "Usage: $0 {up|down|build|shell}"
+exit 1
+
