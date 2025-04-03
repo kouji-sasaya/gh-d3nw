@@ -46,7 +46,12 @@ async function loadData() {
 loadData().then(({ nodes, links }) => {
   // Create a simulation with several forces
   const simulation = d3.forceSimulation(nodes)
-    .force("link", d3.forceLink(links).id(d => d.id).distance(50))
+    .force("link", d3.forceLink(links).id(d => d.id).distance(d => {
+      if (nodes.find(node => node.id === d.source.id)?.group === "employee") {
+        return 50 * 3; // 3x distance for employees
+      }
+      return 50; // Default distance for others
+    }))
     .force("charge", d3.forceManyBody().strength(-30))
     .force("x", d3.forceX())
     .force("y", d3.forceY())
@@ -79,8 +84,8 @@ loadData().then(({ nodes, links }) => {
 
   node.append("circle")
     .attr("r", d => {
-      if (d.group === "project") return 10 * 5; // 5x radius for projects
-      if (d.group === "company") return 10 * 3; // 3x radius for companies
+      if (d.group === "company") return 10 * 1.5; // 1.5x radius for companies
+      if (d.group === "project") return 10 * 2; // 2x radius for projects
       return 10; // Default radius for others
     })
     .attr("fill", d => color(d.group));
