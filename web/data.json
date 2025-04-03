@@ -2,67 +2,67 @@
   "data": [
     {
       "id": "1",
-      "address": "projectalpha.com",
+      "name": "projectalpha.com",
       "type": "project",
-      "parentProjectId": [],
-      "parentCompanyId": "",
-      "name": "Project Alpha"
+      "projects": [],
+      "company": "",
+      "nickname": "Project Alpha"
     },
     {
       "id": "2",
-      "address": "projectbeta.com",
+      "name": "projectbeta.com",
       "type": "project",
-      "parentProjectId": [],
-      "parentCompanyId": "",
-      "name": "Project Beta"
+      "projects": [],
+      "company": "",
+      "nickname": "Project Beta"
     },
     {
       "id": "3",
-      "address": "companyalpha.com",
+      "name": "companyalpha.com",
       "type": "company",
-      "parentProjectId": ["1"],
-      "parentCompanyId": "",
-      "name": "Company Alpha"
+      "projects": ["1"],
+      "company": "",
+      "nickname": "Company Alpha"
     },
     {
       "id": "4",
-      "address": "companybeta.com",
+      "name": "companybeta.com",
       "type": "company",
-      "parentProjectId": ["2"],
-      "parentCompanyId": "",
-      "name": "Company Beta"
+      "projects": ["2"],
+      "company": "",
+      "nickname": "Company Beta"
     },
     {
       "id": "5",
-      "address": "johndoe@companyalpha.com",
+      "name": "johndoe@companyalpha.com",
       "type": "employee",
-      "parentProjectId": ["1", "2"],
-      "parentCompanyId": "3",
-      "name": "John Doe"
+      "projects": ["1", "2"],
+      "company": "3",
+      "nickname": "John Doe"
     },
     {
       "id": "6",
-      "address": "janesmith@companyalpha.com",
+      "name": "janesmith@companyalpha.com",
       "type": "employee",
-      "parentProjectId": ["1"],
-      "parentCompanyId": "3",
-      "name": "Jane Smith"
+      "projects": ["1"],
+      "company": "3",
+      "nickname": "Jane Smith"
     },
     {
       "id": "7",
-      "address": "bobbrown@companybeta.com",
+      "name": "bobbrown@companybeta.com",
       "type": "employee",
-      "parentProjectId": ["2"],
-      "parentCompanyId": "4",
-      "name": "Bob Brown"
+      "projects": ["2"],
+      "company": "4",
+      "nickname": "Bob Brown"
     },
     {
       "id": "8",
-      "address": "alicewhite@companybeta.com",
+      "name": "alicewhite@companybeta.com",
       "type": "employee",
-      "parentProjectId": ["2"],
-      "parentCompanyId": "4",
-      "name": "Alice White"
+      "projects": ["2"],
+      "company": "4",
+      "nickname": "Alice White"
     }
   ]
 }

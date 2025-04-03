@@ -24,19 +24,19 @@ async function loadData() {
   // Extract nodes and links from the JSON structure
   const nodes = json.data.map(d => ({
     id: d.id,
-    name: d.name,
+    name: d.nickname, // Use "nickname" for display
     group: d.type
   }));
 
   const links = [];
   json.data.forEach(d => {
-    if (d.parentProjectId) {
-      d.parentProjectId.forEach(parentId => {
-        links.push({ source: d.id, target: parentId });
+    if (d.projects) { // Updated from parentProjectId to projects
+      d.projects.forEach(projectId => {
+        links.push({ source: d.id, target: projectId });
       });
     }
-    if (d.parentCompanyId) {
-      links.push({ source: d.id, target: d.parentCompanyId });
+    if (d.company) { // Updated from parentCompanyId to company
+      links.push({ source: d.id, target: d.company });
     }
   });
 
@@ -49,7 +49,12 @@ loadData().then(({ nodes, links }) => {
     .force("link", d3.forceLink(links).id(d => d.id).distance(50))
     .force("charge", d3.forceManyBody().strength(-30))
     .force("x", d3.forceX())
-    .force("y", d3.forceY());
+    .force("y", d3.forceY())
+    .force("collision", d3.forceCollide().radius(d => {
+      if (d.group === "project") return 10 * 5 + 5; // Add padding for projects
+      if (d.group === "company") return 10 * 3 + 5; // Add padding for companies
+      return 10 + 5; // Add padding for others
+    }));
 
   // Add a line for each link
   const link = container.append("g")
@@ -73,18 +78,21 @@ loadData().then(({ nodes, links }) => {
       .on("end", dragended));
 
   node.append("circle")
-    .attr("r", 10) // Radius of the circles
+    .attr("r", d => {
+      if (d.group === "project") return 10 * 5; // 5x radius for projects
+      if (d.group === "company") return 10 * 3; // 3x radius for companies
+      return 10; // Default radius for others
+    })
     .attr("fill", d => color(d.group));
 
   node.append("text")
-    .text(d => d.name) // Display node name
+    .text(d => d.name) // Display "nickname" as the node name
     .attr("text-anchor", "middle")
     .attr("dy", ".35em") // Center vertically
     .attr("font-size", "10px")
     .attr("font-family", "Arial, sans-serif")
     .attr("fill", "black") // Text color
-    .attr("stroke", "none"); // テキストのストロークを無効にする
-
+    .attr("stroke", "none"); // Disable text stroke
 
   // Add titles to nodes
   node.append("title")
