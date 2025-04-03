@@ -84,11 +84,16 @@ loadData().then(({ nodes, links }) => {
 
   node.append("circle")
     .attr("r", d => {
-      if (d.group === "company") return 10 * 1.5; // 1.5x radius for companies
-      if (d.group === "project") return 10 * 2; // 2x radius for projects
+      if (d.group === "service") return 10 * 1.5; // 1.5x radius for services
+      if (d.group === "company") return 10 * 2; // 2x radius for companies
+      if (d.group === "project") return 10 * 2.5; // 2.5x radius for projects
+      if (d.group === "employee") return 10; // 1x radius for employees
       return 10; // Default radius for others
     })
-    .attr("fill", d => color(d.group));
+    .attr("fill", d => {
+      if (d.group === "service") return "purple"; // Purple color for services
+      return color(d.group); // Default color for others
+    });
 
   node.append("text")
     .text(d => d.name) // Display "nickname" as the node name

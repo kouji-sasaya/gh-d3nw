@@ -2,6 +2,7 @@
   "data": [
     {
       "id": "1",
+      "count": 3,
       "name": "projectalpha.com",
       "type": "project",
       "projects": [],
@@ -10,6 +11,7 @@
     },
     {
       "id": "2",
+      "count": 2,
       "name": "projectbeta.com",
       "type": "project",
       "projects": [],
@@ -18,6 +20,7 @@
     },
     {
       "id": "3",
+      "count": 5,
       "name": "companyalpha.com",
       "type": "company",
       "projects": ["1"],
@@ -26,6 +29,7 @@
     },
     {
       "id": "4",
+      "count": 4,
       "name": "companybeta.com",
       "type": "company",
       "projects": ["2"],
@@ -38,15 +42,17 @@
       "type": "employee",
       "projects": ["1", "2", "25"],
       "company": "3",
-      "nickname": "John Doe"
+      "nickname": "John Doe",
+      "services": ["202", "203"]
     },
     {
       "id": "6",
       "name": "janesmith@companyalpha.com",
       "type": "employee",
       "projects": ["1", "25"],
-      "company": "3",
-      "nickname": "Jane Smith"
+      "company": "4",
+      "nickname": "Jane Smith",
+      "services": ["204", "205"]
     },
     {
       "id": "7",
@@ -54,63 +60,71 @@
       "type": "employee",
       "projects": ["2"],
       "company": "24",
-      "nickname": "Bob Brown"
+      "nickname": "Bob Brown",
+      "services": ["206", "207"]
     },
     {
       "id": "8",
-      "name": "alicewhite@companyepsilon.com",
+      "name": "alicewhite@companygamma.com",
       "type": "employee",
       "projects": ["2"],
-      "company": "24",
-      "nickname": "Alice White"
+      "company": "30",
+      "nickname": "Alice White",
+      "services": ["208", "209"]
     },
     {
       "id": "9",
-      "name": "emilygreen@companyalpha.com",
+      "name": "emilygreen@companydelta.com",
       "type": "employee",
       "projects": ["1"],
-      "company": "3",
-      "nickname": "Emily Green"
+      "company": "31",
+      "nickname": "Emily Green",
+      "services": ["210", "211"]
     },
     {
       "id": "10",
-      "name": "michaelblue@companybeta.com",
+      "name": "michaelblue@companyzeta.com",
       "type": "employee",
       "projects": ["2"],
-      "company": "4",
-      "nickname": "Michael Blue"
+      "company": "32",
+      "nickname": "Michael Blue",
+      "services": ["202", "204"]
     },
     {
       "id": "11",
-      "name": "sarahblack@companyalpha.com",
+      "name": "sarahblack@companyeta.com",
       "type": "employee",
       "projects": ["1", "2", "25"],
-      "company": "3",
-      "nickname": "Sarah Black"
+      "company": "33",
+      "nickname": "Sarah Black",
+      "services": ["203", "205"]
     },
     {
       "id": "12",
-      "name": "davidwhite@companybeta.com",
+      "name": "davidwhite@companytheta.com",
       "type": "employee",
       "projects": ["2"],
-      "company": "4",
-      "nickname": "David White"
+      "company": "34",
+      "nickname": "David White",
+      "services": ["206", "208"]
     },
     {
       "id": "13",
-      "name": "laurabrown@companyalpha.com",
+      "name": "laurabrown@companyiota.com",
       "type": "employee",
       "projects": ["1"],
-      "company": "3",
-      "nickname": "Laura Brown"
+      "company": "35",
+      "nickname": "Laura Brown",
+      "services": ["207", "209"]
     },
     {
       "id": "14",
-      "name": "paulgray@companyalpha.com",
+      "name": "paulgray@companykappa.com",
       "type": "employee",
       "projects": ["1"],
-      "company": "3",
-      "nickname": "Paul Gray"
+      "company": "36",
+      "nickname": "Paul Gray",
+      "services": ["210"]
     },
     {
       "id": "15",
@@ -118,7 +132,8 @@
       "type": "employee",
       "projects": ["2"],
       "company": "4",
-      "nickname": "Anna Silver"
+      "nickname": "Anna Silver",
+      "services": ["211"]
     },
     {
       "id": "16",
@@ -126,7 +141,8 @@
       "type": "employee",
       "projects": ["1", "2"],
       "company": "3",
-      "nickname": "James Gold"
+      "nickname": "James Gold",
+      "services": ["202", "203", "204"]
     },
     {
       "id": "17",
@@ -134,7 +150,8 @@
       "type": "employee",
       "projects": ["2"],
       "company": "4",
-      "nickname": "Lisa Black"
+      "nickname": "Lisa Black",
+      "services": ["205", "206"]
     },
     {
       "id": "18",
@@ -142,7 +159,8 @@
       "type": "employee",
       "projects": ["1"],
       "company": "3",
-      "nickname": "Robert White"
+      "nickname": "Robert White",
+      "services": ["207", "208"]
     },
     {
       "id": "19",
@@ -150,7 +168,8 @@
       "type": "employee",
       "projects": ["1"],
       "company": "3",
-      "nickname": "Chris Green"
+      "nickname": "Chris Green",
+      "services": ["209", "210"]
     },
     {
       "id": "20",
@@ -158,7 +177,8 @@
       "type": "employee",
       "projects": ["1", "2", "25"],
       "company": "24",
-      "nickname": "Karen Blue"
+      "nickname": "Karen Blue",
+      "services": ["211", "202"]
     },
     {
       "id": "21",
@@ -166,7 +186,8 @@
       "type": "employee",
       "projects": ["1", "2"],
       "company": "3",
-      "nickname": "Steve Black"
+      "nickname": "Steve Black",
+      "services": ["203", "204"]
     },
     {
       "id": "22",
@@ -174,7 +195,8 @@
       "type": "employee",
       "projects": ["2"],
       "company": "4",
-      "nickname": "Nancy Gold"
+      "nickname": "Nancy Gold",
+      "services": ["205", "206"]
     },
     {
       "id": "23",
@@ -182,15 +204,18 @@
       "type": "employee",
       "projects": ["1", "25"],
       "company": "3",
-      "nickname": "David Brown"
+      "nickname": "David Brown",
+      "services": ["207", "208"]
     },
     {
       "id": "24",
+      "count": 6,
       "name": "companyepsilon.com",
       "type": "company",
       "projects": ["1", "2"],
       "company": "",
-      "nickname": "Company ε"
+      "nickname": "Company ε",
+      "services": ["209", "210"]
     },
     {
       "id": "25",
@@ -198,7 +223,8 @@
       "type": "project",
       "projects": [],
       "company": "",
-      "nickname": "Project Z"
+      "nickname": "Project Z",
+      "services": ["211"]
     },
     {
       "id": "26",
@@ -234,19 +260,74 @@
     },
     {
       "id": "30",
+      "count": 3,
+      "name": "companygamma.com",
+      "type": "company",
+      "projects": [],
+      "company": "",
+      "nickname": "Company γ"
+    },
+    {
+      "id": "31",
+      "count": 4,
+      "name": "companydelta.com",
+      "type": "company",
+      "projects": [],
+      "company": "",
+      "nickname": "Company δ"
+    },
+    {
+      "id": "32",
+      "count": 5,
+      "name": "companyzeta.com",
+      "type": "company",
+      "projects": [],
+      "company": "",
+      "nickname": "Company ζ"
+    },
+    {
+      "id": "33",
+      "count": 3,
+      "name": "companyeta.com",
+      "type": "company",
+      "projects": [],
+      "company": "",
+      "nickname": "Company η"
+    },
+    {
+      "id": "34",
+      "count": 4,
+      "name": "companytheta.com",
+      "type": "company",
+      "projects": [],
+      "company": "",
+      "nickname": "Company θ"
+    },
+    {
+      "id": "35",
+      "count": 2,
+      "name": "companyiota.com",
+      "type": "company",
+      "projects": [],
+      "company": "",
+      "nickname": "Company ι"
+    },
+    {
+      "id": "36",
+      "count": 3,
+      "name": "companykappa.com",
+      "type": "company",
+      "projects": [],
+      "company": "",
+      "nickname": "Company κ"
+    },
+    {
+      "id": "31",
       "name": "clarkkent@companybeta.com",
       "type": "employee",
       "projects": ["2"],
       "company": "4",
       "nickname": "Clark Kent"
-    },
-    {
-      "id": "31",
-      "name": "dianaprince@companyepsilon.com",
-      "type": "employee",
-      "projects": ["1", "25"],
-      "company": "24",
-      "nickname": "Diana Prince"
     },
     {
       "id": "32",
@@ -1602,11 +1683,422 @@
     },
     {
       "id": "201",
+      "count": 2,
       "name": "github.com",
       "type": "service",
       "projects": [],
       "company": "",
       "nickname": "GitHub"
+    },
+    {
+      "id": "202",
+      "count": 3,
+      "name": "gitlab.com",
+      "type": "service",
+      "projects": [],
+      "company": "",
+      "nickname": "GitLab"
+    },
+    {
+      "id": "203",
+      "count": 2,
+      "name": "bitbucket.org",
+      "type": "service",
+      "projects": [],
+      "company": "",
+      "nickname": "BitBucket"
+    },
+    {
+      "id": "204",
+      "count": 2,
+      "name": "jira.com",
+      "type": "service",
+      "projects": [],
+      "company": "",
+      "nickname": "Jira"
+    },
+    {
+      "id": "205",
+      "count": 2,
+      "name": "circleci.com",
+      "type": "service",
+      "projects": [],
+      "company": "",
+      "nickname": "CircleCI"
+    },
+    {
+      "id": "206",
+      "count": 2,
+      "name": "travis-ci.com",
+      "type": "service",
+      "projects": [],
+      "company": "",
+      "nickname": "Travis CI"
+    },
+    {
+      "id": "207",
+      "count": 2,
+      "name": "hub.docker.com",
+      "type": "service",
+      "projects": [],
+      "company": "",
+      "nickname": "Docker Hub"
+    },
+    {
+      "id": "208",
+      "count": 2,
+      "name": "aws.amazon.com/codebuild",
+      "type": "service",
+      "projects": [],
+      "company": "",
+      "nickname": "AWS CodeBuild"
+    },
+    {
+      "id": "209",
+      "count": 2,
+      "name": "dev.azure.com",
+      "type": "service",
+      "projects": [],
+      "company": "",
+      "nickname": "Azure DevOps"
+    },
+    {
+      "id": "210",
+      "count": 2,
+      "name": "postman.com",
+      "type": "service",
+      "projects": [],
+      "company": "",
+      "nickname": "Postman"
+    },
+    {
+      "id": "211",
+      "count": 2,
+      "name": "terraform.io",
+      "type": "service",
+      "projects": [],
+      "company": "",
+      "nickname": "Terraform Cloud"
+    },
+    {
+      "id": "212",
+      "name": "johnadams@companyalpha.com",
+      "type": "employee",
+      "projects": ["1"],
+      "company": "3",
+      "nickname": "John Adams"
+    },
+    {
+      "id": "213",
+      "name": "emilyclark@companybeta.com",
+      "type": "employee",
+      "projects": ["2"],
+      "company": "4",
+      "nickname": "Emily Clark"
+    },
+    {
+      "id": "214",
+      "name": "michaeljohnson@companyepsilon.com",
+      "type": "employee",
+      "projects": ["1", "2"],
+      "company": "24",
+      "nickname": "Michael Johnson"
+    },
+    {
+      "id": "215",
+      "name": "sarahwilson@companygamma.com",
+      "type": "employee",
+      "projects": ["2"],
+      "company": "30",
+      "nickname": "Sarah Wilson"
+    },
+    {
+      "id": "216",
+      "name": "davidmartin@companydelta.com",
+      "type": "employee",
+      "projects": ["1"],
+      "company": "31",
+      "nickname": "David Martin"
+    },
+    {
+      "id": "217",
+      "name": "laurajones@companyzeta.com",
+      "type": "employee",
+      "projects": ["2"],
+      "company": "32",
+      "nickname": "Laura Jones"
+    },
+    {
+      "id": "218",
+      "name": "robertbrown@companyeta.com",
+      "type": "employee",
+      "projects": ["1", "2"],
+      "company": "33",
+      "nickname": "Robert Brown"
+    },
+    {
+      "id": "219",
+      "name": "karenlee@companytheta.com",
+      "type": "employee",
+      "projects": ["2"],
+      "company": "34",
+      "nickname": "Karen Lee"
+    },
+    {
+      "id": "220",
+      "name": "paulwalker@companyiota.com",
+      "type": "employee",
+      "projects": ["1"],
+      "company": "35",
+      "nickname": "Paul Walker"
+    },
+    {
+      "id": "221",
+      "name": "nancywhite@companykappa.com",
+      "type": "employee",
+      "projects": ["1"],
+      "company": "36",
+      "nickname": "Nancy White"
+    },
+    {
+      "id": "222",
+      "name": "jamesking@companyalpha.com",
+      "type": "employee",
+      "projects": ["1"],
+      "company": "3",
+      "nickname": "James King"
+    },
+    {
+      "id": "223",
+      "name": "oliviabaker@companybeta.com",
+      "type": "employee",
+      "projects": ["2"],
+      "company": "4",
+      "nickname": "Olivia Baker"
+    },
+    {
+      "id": "224",
+      "name": "danielhill@companyepsilon.com",
+      "type": "employee",
+      "projects": ["1", "2"],
+      "company": "24",
+      "nickname": "Daniel Hill"
+    },
+    {
+      "id": "225",
+      "name": "sophiathomas@companygamma.com",
+      "type": "employee",
+      "projects": ["2"],
+      "company": "30",
+      "nickname": "Sophia Thomas"
+    },
+    {
+      "id": "226",
+      "name": "liamrobinson@companydelta.com",
+      "type": "employee",
+      "projects": ["1"],
+      "company": "31",
+      "nickname": "Liam Robinson"
+    },
+    {
+      "id": "227",
+      "name": "isabellawright@companyzeta.com",
+      "type": "employee",
+      "projects": ["2"],
+      "company": "32",
+      "nickname": "Isabella Wright"
+    },
+    {
+      "id": "228",
+      "name": "ethanallen@companyeta.com",
+      "type": "employee",
+      "projects": ["1", "2"],
+      "company": "33",
+      "nickname": "Ethan Allen"
+    },
+    {
+      "id": "229",
+      "name": "harperyoung@companytheta.com",
+      "type": "employee",
+      "projects": ["2"],
+      "company": "34",
+      "nickname": "Harper Young"
+    },
+    {
+      "id": "230",
+      "name": "jacksonharris@companyiota.com",
+      "type": "employee",
+      "projects": ["1"],
+      "company": "35",
+      "nickname": "Jackson Harris"
+    },
+    {
+      "id": "231",
+      "name": "averyclark@companykappa.com",
+      "type": "employee",
+      "projects": ["1"],
+      "company": "36",
+      "nickname": "Avery Clark"
+    },
+    {
+      "id": "232",
+      "name": "scarlettadams@companyalpha.com",
+      "type": "employee",
+      "projects": ["1"],
+      "company": "3",
+      "nickname": "Scarlett Adams"
+    },
+    {
+      "id": "233",
+      "name": "graysonmiller@companybeta.com",
+      "type": "employee",
+      "projects": ["2"],
+      "company": "4",
+      "nickname": "Grayson Miller"
+    },
+    {
+      "id": "234",
+      "name": "victoriabrown@companyepsilon.com",
+      "type": "employee",
+      "projects": ["1", "2"],
+      "company": "24",
+      "nickname": "Victoria Brown"
+    },
+    {
+      "id": "235",
+      "name": "loganmartin@companygamma.com",
+      "type": "employee",
+      "projects": ["2"],
+      "company": "30",
+      "nickname": "Logan Martin"
+    },
+    {
+      "id": "236",
+      "name": "zoewilson@companydelta.com",
+      "type": "employee",
+      "projects": ["1"],
+      "company": "31",
+      "nickname": "Zoe Wilson"
+    },
+    {
+      "id": "237",
+      "name": "carterlee@companyzeta.com",
+      "type": "employee",
+      "projects": ["2"],
+      "company": "32",
+      "nickname": "Carter Lee"
+    },
+    {
+      "id": "238",
+      "name": "madisonwalker@companyeta.com",
+      "type": "employee",
+      "projects": ["1", "2"],
+      "company": "33",
+      "nickname": "Madison Walker"
+    },
+    {
+      "id": "239",
+      "name": "jaydenwhite@companytheta.com",
+      "type": "employee",
+      "projects": ["2"],
+      "company": "34",
+      "nickname": "Jayden White"
+    },
+    {
+      "id": "240",
+      "name": "ellablack@companyiota.com",
+      "type": "employee",
+      "projects": ["1"],
+      "company": "35",
+      "nickname": "Ella Black"
+    },
+    {
+      "id": "241",
+      "name": "aidengreen@companykappa.com",
+      "type": "employee",
+      "projects": ["1"],
+      "company": "36",
+      "nickname": "Aiden Green"
+    },
+    {
+      "id": "242",
+      "name": "sophiablue@companyalpha.com",
+      "type": "employee",
+      "projects": ["1"],
+      "company": "3",
+      "nickname": "Sophia Blue"
+    },
+    {
+      "id": "243",
+      "name": "lucasblack@companybeta.com",
+      "type": "employee",
+      "projects": ["2"],
+      "company": "4",
+      "nickname": "Lucas Black"
+    },
+    {
+      "id": "244",
+      "name": "miared@companyepsilon.com",
+      "type": "employee",
+      "projects": ["1", "2"],
+      "company": "24",
+      "nickname": "Mia Red"
+    },
+    {
+      "id": "245",
+      "name": "ethangrey@companygamma.com",
+      "type": "employee",
+      "projects": ["2"],
+      "company": "30",
+      "nickname": "Ethan Grey"
+    },
+    {
+      "id": "246",
+      "name": "harperwhite@companydelta.com",
+      "type": "employee",
+      "projects": ["1"],
+      "company": "31",
+      "nickname": "Harper White"
+    },
+    {
+      "id": "247",
+      "name": "jacksonblue@companyzeta.com",
+      "type": "employee",
+      "projects": ["2"],
+      "company": "32",
+      "nickname": "Jackson Blue"
+    },
+    {
+      "id": "248",
+      "name": "averyblack@companyeta.com",
+      "type": "employee",
+      "projects": ["1", "2"],
+      "company": "33",
+      "nickname": "Avery Black"
+    },
+    {
+      "id": "249",
+      "name": "scarlettred@companytheta.com",
+      "type": "employee",
+      "projects": ["2"],
+      "company": "34",
+      "nickname": "Scarlett Red"
+    },
+    {
+      "id": "250",
+      "name": "graysonwhite@companyiota.com",
+      "type": "employee",
+      "projects": ["1"],
+      "company": "35",
+      "nickname": "Grayson White"
+    },
+    {
+      "id": "251",
+      "name": "victoriablue@companykappa.com",
+      "type": "employee",
+      "projects": ["1"],
+      "company": "36",
+      "nickname": "Victoria Blue"
     }
   ]
 }
