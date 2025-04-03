@@ -125,11 +125,21 @@ loadData().then(({ nodes, links }) => {
   function dragged(event) {
     event.subject.fx = event.x;
     event.subject.fy = event.y;
+
+    // ドラッグ中のノードに接続されたリンクを赤くして太くする
+    link
+      .attr("stroke", d => (d.source.id === event.subject.id || d.target.id === event.subject.id ? "red" : "#999"))
+      .attr("stroke-width", d => (d.source.id === event.subject.id || d.target.id === event.subject.id ? 3 : 1.5));
   }
 
   function dragended(event) {
     if (!event.active) simulation.alphaTarget(0);
     event.subject.fx = null;
     event.subject.fy = null;
+
+    // ドラッグ終了後にリンクのスタイルをリセット
+    link
+      .attr("stroke", "#999")
+      .attr("stroke-width", 1.5);
   }
 });
