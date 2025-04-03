@@ -1,0 +1,68 @@
+{
+  "data": [
+    {
+      "id": "1",
+      "address": "projectalpha.com",
+      "type": "project",
+      "parentProjectId": [],
+      "parentCompanyId": "",
+      "name": "Project Alpha"
+    },
+    {
+      "id": "2",
+      "address": "projectbeta.com",
+      "type": "project",
+      "parentProjectId": [],
+      "parentCompanyId": "",
+      "name": "Project Beta"
+    },
+    {
+      "id": "3",
+      "address": "companyalpha.com",
+      "type": "company",
+      "parentProjectId": ["1"],
+      "parentCompanyId": "",
+      "name": "Company Alpha"
+    },
+    {
+      "id": "4",
+      "address": "companybeta.com",
+      "type": "company",
+      "parentProjectId": ["2"],
+      "parentCompanyId": "",
+      "name": "Company Beta"
+    },
+    {
+      "id": "5",
+      "address": "johndoe@companyalpha.com",
+      "type": "employee",
+      "parentProjectId": ["1", "2"],
+      "parentCompanyId": "3",
+      "name": "John Doe"
+    },
+    {
+      "id": "6",
+      "address": "janesmith@companyalpha.com",
+      "type": "employee",
+      "parentProjectId": ["1"],
+      "parentCompanyId": "3",
+      "name": "Jane Smith"
+    },
+    {
+      "id": "7",
+      "address": "bobbrown@companybeta.com",
+      "type": "employee",
+      "parentProjectId": ["2"],
+      "parentCompanyId": "4",
+      "name": "Bob Brown"
+    },
+    {
+      "id": "8",
+      "address": "alicewhite@companybeta.com",
+      "type": "employee",
+      "parentProjectId": ["2"],
+      "parentCompanyId": "4",
+      "name": "Alice White"
+    }
+  ]
+}
