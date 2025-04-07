@@ -43,6 +43,38 @@ async function loadData() {
   return { nodes, links };
 }
 
+function createTypeCheckboxes() {
+  const types = ["project", "company", "service", "employee"];
+
+  // Create a container for checkboxes
+  const checkboxContainer = d3.select("body")
+    .append("div")
+    .attr("class", "type-checkbox-container")
+    .style("position", "absolute")
+    .style("left", "10px") // Move to the left side
+    .style("top", "10px")
+    .style("display", "flex")
+    .style("flex-direction", "column");
+
+  // Add a checkbox for each type
+  types.forEach(type => {
+    const label = checkboxContainer.append("label")
+      .style("margin-bottom", "5px");
+
+    label.append("input")
+      .attr("type", "checkbox")
+      .attr("class", "filter-checkbox")
+      .attr("data-group", type)
+      .property("checked", true); // Default to checked
+
+    label.append("span")
+      .text(type);
+  });
+}
+
+// Call the function to create checkboxes
+createTypeCheckboxes();
+
 loadData().then(({ nodes, links }) => {
   // Create a simulation with several forces
   const simulation = d3.forceSimulation(nodes)

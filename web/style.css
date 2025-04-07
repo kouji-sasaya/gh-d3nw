@@ -1,0 +1,29 @@
+/* ...existing code... */
+
+.checkbox-container {
+  background-color: #f9f9f9;
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  max-width: 150px; /* Limit the width */
+  text-align: left; /* Align content to the left */
+}
+
+.checkbox-container label {
+  word-wrap: break-word; /* Wrap long text */
+}
+
+.type-checkbox-container {
+  background-color: #f9f9f9;
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  max-width: 150px; /* Limit the width */
+  text-align: left; /* Align content to the left */
+}
+
+.type-checkbox-container label {
+  word-wrap: break-word; /* Wrap long text */
+}
