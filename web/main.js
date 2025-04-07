@@ -50,7 +50,7 @@ loadData().then(({ nodes, links }) => {
       if (nodes.find(node => node.id === d.source.id)?.group === "employee") {
         return 50 * 3; // 3x distance for employees
       }
-      return 50; // Default distance for others
+      return 50 * 3; // Default distance for others, multiplied by 3
     }))
     .force("charge", d3.forceManyBody().strength(-30))
     .force("x", d3.forceX())
@@ -139,12 +139,19 @@ loadData().then(({ nodes, links }) => {
 
   function dragended(event) {
     if (!event.active) simulation.alphaTarget(0);
-    event.subject.fx = null;
-    event.subject.fy = null;
+    // Keep the node pinned at its current position
+    event.subject.fx = event.subject.x;
+    event.subject.fy = event.subject.y;
 
     // ドラッグ終了後にリンクのスタイルをリセット
     link
       .attr("stroke", "#999")
       .attr("stroke-width", 1.5);
   }
+
+  // Double-click behavior to unpin nodes
+  node.on("dblclick", (event, d) => {
+    d.fx = null;
+    d.fy = null;
+  });
 });
