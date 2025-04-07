@@ -120,6 +120,53 @@ loadData().then(({ nodes, links }) => {
       .attr("transform", d => `translate(${d.x},${d.y})`);
   });
 
+  // Add filtering functionality
+  const checkboxes = d3.selectAll(".filter-checkbox");
+  checkboxes.on("change", () => {
+    const activeGroups = new Set(
+      checkboxes
+        .filter(function () { return this.checked; })
+        .nodes()
+        .map(checkbox => checkbox.dataset.group)
+    );
+
+    // Update node visibility and force simulation
+    nodes.forEach(node => {
+      node.hidden = !activeGroups.has(node.group);
+    });
+
+    // Remove dependencies for hidden nodes
+    const filteredLinks = links.filter(link => {
+      if (link.source.hidden || link.target.hidden) {
+        link.source.fx = null; // Unpin hidden nodes
+        link.source.fy = null;
+        link.target.fx = null;
+        link.target.fy = null;
+        return false; // Exclude hidden links
+      }
+      return true;
+    });
+
+    simulation.force("link").links(filteredLinks);
+
+    simulation.alpha(1).restart();
+
+    // Move hidden nodes away from the center
+    nodes.forEach(node => {
+      if (node.hidden) {
+        node.fx = node.x + 500; // Move far from the center
+        node.fy = node.y + 500;
+      } else {
+        node.fx = null;
+        node.fy = null;
+      }
+    });
+
+    // Update node and link visibility
+    node.style("display", d => (d.hidden ? "none" : "block"));
+    link.style("display", d => (!d.source.hidden && !d.target.hidden ? "block" : "none"));
+  });
+
   // Drag behavior functions
   function dragstarted(event) {
     if (!event.active) simulation.alphaTarget(0.3).restart();
