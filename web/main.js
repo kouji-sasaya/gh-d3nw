@@ -139,14 +139,41 @@ loadData().then(({ nodes, links }) => {
       return colorScale(d.group); // Use color scale for other types
     });
 
-  node.append("text")
-    .text(d => d.name) // Display "nickname" as the node name
-    .attr("text-anchor", "middle")
-    .attr("dy", ".35em") // Center vertically
-    .attr("font-size", "10px")
-    .attr("font-family", "Arial, sans-serif")
-    .attr("fill", "black") // Text color
-    .attr("stroke", "none"); // Disable text stroke
+  node.append("g")
+    .each(function(d) {
+      if (d.group === "service") {
+        const service = d.name.toLowerCase();
+        if (service === "github") {
+          // GitHub icon from external SVG
+          d3.select(this).append("image")
+            .attr("xlink:href", "github-mark.svg")
+            .attr("width", 28)  // Adjust size to match circle
+            .attr("height", 28) // Adjust size to match circle
+            .attr("x", -14)     // Center the image
+            .attr("y", -14);    // Center the image
+        } else {
+          // Default text label for other services
+          d3.select(this).append("text")
+            .text(d => d.name)
+            .attr("text-anchor", "middle")
+            .attr("dy", ".35em")
+            .attr("font-size", "10px")
+            .attr("font-family", "Arial, sans-serif")
+            .attr("fill", "black")
+            .attr("stroke", "none");
+        }
+      } else {
+        // Default text label for non-services
+        d3.select(this).append("text")
+          .text(d => d.name)
+          .attr("text-anchor", "middle")
+          .attr("dy", ".35em")
+          .attr("font-size", "10px")
+          .attr("font-family", "Arial, sans-serif")
+          .attr("fill", "black")
+          .attr("stroke", "none");
+      }
+    });
 
   // Add titles to nodes
   node.append("title")
