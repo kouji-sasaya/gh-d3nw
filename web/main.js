@@ -1,5 +1,20 @@
 import { loadLinks } from "./dataLoader.js";
 
+// カラーパレットの定義
+const colorScale = d3.scaleOrdinal()
+  .range([
+    '#4285F4', // Google Blue
+    '#DB4437', // Google Red
+    '#F4B400', // Google Yellow
+    '#0F9D58', // Google Green
+    '#4286f4', // Light Blue
+    '#db4437', // Light Red
+    '#f4b400', // Light Yellow
+    '#0f9d58', // Light Green
+    '#3367D6', // Dark Blue
+    '#C5221F'  // Dark Red
+  ]);
+
 const width = 928;
 const height = 680;
 
@@ -68,8 +83,8 @@ function createTypeCheckboxes() {
   });
 }
 
-// Temporarily comment out checkbox creation
-// createTypeCheckboxes();
+// Uncomment the checkbox creation
+createTypeCheckboxes();
 
 loadData().then(({ nodes, links }) => {
   // Create a simulation with several forces
@@ -119,8 +134,9 @@ loadData().then(({ nodes, links }) => {
       return 10; // Default radius for others
     })
     .attr("fill", d => {
-      if (d.group === "service") return "purple"; // Purple color for services
-      return color(d.group); // Default color for others
+      if (d.group === "service") return "#F4B400"; // Google Yellow for services
+      if (d.group === "employee") return "#0F9D58"; // Google Green for employees
+      return colorScale(d.group); // Use color scale for other types
     });
 
   node.append("text")
