@@ -14,6 +14,20 @@
   word-wrap: break-word; /* Wrap long text */
 }
 
+#canvas {
+  width: 100%;
+  height: calc(100vh - 64px); /* Adjust height to exclude the Tailblocks header */
+  overflow: hidden; /* Ensure no scrollbars appear */
+  position: relative; /* Ensure proper stacking context */
+  top: 64px; /* Push the canvas below the header */
+}
+
+svg {
+  width: 100%;
+  height: 100%;
+  display: block; /* Ensure the SVG scales properly */
+}
+
 .type-checkbox-container {
   background-color: #f9f9f9;
   border: 1px solid #ccc;
@@ -22,6 +36,10 @@
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   max-width: 150px; /* Limit the width */
   text-align: left; /* Align content to the left */
+  position: absolute;
+  top: 64px; /* Ensure checkboxes are below the header */
+  left: 10px;
+  z-index: 10; /* Ensure checkboxes are above other elements */
 }
 
 .type-checkbox-container label {

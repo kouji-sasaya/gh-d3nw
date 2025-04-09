@@ -10,7 +10,7 @@ const svg = d3.select("svg")
   .attr("width", width)
   .attr("height", height)
   .attr("viewBox", [-width / 2, -height / 2, width, height])
-  .attr("style", "max-width: 100%; height: auto;")
+  .attr("style", "max-width: 100%; height: 100%;") // Changed to use full height
   .call(d3.zoom().on("zoom", ({ transform }) => {
     container.attr("transform", transform);
   }));
@@ -46,13 +46,9 @@ async function loadData() {
 function createTypeCheckboxes() {
   const types = ["project", "company", "service", "employee"];
 
-  // Create a container for checkboxes
   const checkboxContainer = d3.select("body")
     .append("div")
     .attr("class", "type-checkbox-container")
-    .style("position", "absolute")
-    .style("left", "10px") // Move to the left side
-    .style("top", "10px")
     .style("display", "flex")
     .style("flex-direction", "column");
 
@@ -72,8 +68,8 @@ function createTypeCheckboxes() {
   });
 }
 
-// Call the function to create checkboxes
-createTypeCheckboxes();
+// Temporarily comment out checkbox creation
+// createTypeCheckboxes();
 
 loadData().then(({ nodes, links }) => {
   // Create a simulation with several forces
