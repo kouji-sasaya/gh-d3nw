@@ -149,8 +149,8 @@ loadData().then(({ nodes, links }) => {
             .attr("xlink:href", "github-mark.svg")
             .attr("width", 28)  // Adjust size to match circle
             .attr("height", 28) // Adjust size to match circle
-            .attr("x", -14)     // Center the image
-            .attr("y", -14);    // Center the image
+            .attr("x", -13.9)     // Center the image
+            .attr("y", -14.3);    // Center the image
         } else {
           // Default text label for other services
           d3.select(this).append("text")

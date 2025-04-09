@@ -9,7 +9,8 @@
       body {
         margin: 0;
         font-family: Arial, sans-serif;
-        overflow: hidden; /* Hide scrollbars */
+        overflow: hidden;
+        background-color: #f0f0f0;
       }
 
       #sidebar {
@@ -17,42 +18,46 @@
         height: calc(100vh - 3.25rem);
         position: fixed;
         left: 0;
-        background: #f8f9fa;
-        border-right: 1px solid #dee2e6;
+        background: #e0e0e0;
+        border-right: 1px solid #ccc;
         padding: 1rem;
         overflow-y: auto;
+        color: #333;
       }
 
       #canvas {
         width: calc(100% - 250px);
-        height: calc(100vh - 3.25rem); /* ナビゲーションバーの高さのみ除外 */
+        height: calc(100vh - 3.25rem);
         overflow: hidden;
         position: relative;
         margin-left: 250px;
-        margin-top:  0.00rem; /* ナビゲーションバーの高さ分のマージン */
+        margin-top: 0.00rem;
+        background-color: #f0f0f0;
       }
 
       svg {
         width: 100%;
         height: 100%;
         display: block;
+        background-color: #f0f0f0;
       }
 
       .type-checkbox-container {
         position: fixed;
-        right: 10px;  /* 左から右に変更 */
+        right: 10px;
         top: 4rem;
         z-index: 1000;
-        background: rgba(255, 255, 255, 0.9);
+        background: rgba(224, 224, 224, 0.9);
         padding: 10px;
-        border: 1px solid #ddd;
+        border: 1px solid #ccc;
         border-radius: 4px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        pointer-events: auto; /* チェックボックスのクリックを有効にする */
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        pointer-events: auto;
+        color: #333;
       }
 
       #canvas svg {
-        pointer-events: auto; /* SVGのイベントを有効にする */
+        pointer-events: auto;
       }
     </style>
   </head>
@@ -64,11 +69,11 @@
     </nav>
 
     <div id="sidebar">
-      <h5 class="mb-3">Sidebar</h5>
+      <h5 class="mb-3 text-dark">Sidebar</h5>
       <div class="list-group">
-        <a href="#" class="list-group-item list-group-item-action">Item 1</a>
-        <a href="#" class="list-group-item list-group-item-action">Item 2</a>
-        <a href="#" class="list-group-item list-group-item-action">Item 3</a>
+        <a href="#" class="list-group-item list-group-item-action bg-light text-dark">Item 1</a>
+        <a href="#" class="list-group-item list-group-item-action bg-light text-dark">Item 2</a>
+        <a href="#" class="list-group-item list-group-item-action bg-light text-dark">Item 3</a>
       </div>
     </div>
 
