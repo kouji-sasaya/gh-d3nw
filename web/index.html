@@ -18,11 +18,16 @@
         height: calc(100vh - 3.25rem);
         position: fixed;
         left: 0;
-        background: #e0e0e0;
-        border-right: 1px solid #ccc;
+        background: #444;
+        border-right: 1px solid #555;
         padding: 1rem;
         overflow-y: auto;
-        color: #333;
+        color: #fff;
+        transition: transform 0.3s ease;
+      }
+
+      #sidebar.closed {
+        transform: translateX(-250px);
       }
 
       #canvas {
@@ -32,7 +37,31 @@
         position: relative;
         margin-left: 250px;
         margin-top: 0.00rem;
-        background-color: #f0f0f0;
+        background-color: #333;
+        transition: width 0.3s ease, margin-left 0.3s ease;
+      }
+
+      #canvas.full {
+        width: 100%;
+        margin-left: 0;
+      }
+
+      #sidebar-toggle {
+        position: fixed;
+        left: 250px;
+        top: 4rem;
+        z-index: 1001;
+        padding: 5px 10px;
+        background: #444;
+        border: 1px solid #555;
+        color: #fff;
+        border-radius: 0 4px 4px 0;
+        cursor: pointer;
+        transition: left 0.3s ease;
+      }
+
+      #sidebar-toggle.closed {
+        left: 0;
       }
 
       svg {
@@ -68,6 +97,7 @@
       </div>
     </nav>
 
+    <button id="sidebar-toggle">☰</button>
     <div id="sidebar">
       <h5 class="mb-3 text-dark">Sidebar</h5>
       <div class="list-group">
@@ -101,6 +131,16 @@
 
       document.addEventListener('DOMContentLoaded', () => {
         loadScript('main.js'); // Load main.js by default on page load
+      });
+
+      document.getElementById('sidebar-toggle').addEventListener('click', function() {
+        const sidebar = document.getElementById('sidebar');
+        const canvas = document.getElementById('canvas');
+        const toggle = document.getElementById('sidebar-toggle');
+        
+        sidebar.classList.toggle('closed');
+        canvas.classList.toggle('full');
+        toggle.classList.toggle('closed');
       });
     </script>
   </body>
