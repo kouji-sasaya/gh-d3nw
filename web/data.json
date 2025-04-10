@@ -80,7 +80,7 @@
     },
     {
       "id": "s1",
-      "name": "GitLab",
+      "name": "Google Cloud",
       "type": "service",
       "links": ["p1"]
     },
