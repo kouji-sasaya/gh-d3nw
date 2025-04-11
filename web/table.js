@@ -18,18 +18,22 @@ function createDataTable(data) {
     // テーブル作成
     const table = document.createElement('table');
     table.className = 'table table-striped table-hover';
-    table.innerHTML = `
-        <thead class="table-dark">
-            <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Links</th>
-            </tr>
-        </thead>
-        <tbody>
-        </tbody>
-    `;
+    
+    // ヘッダー作成を修正
+    const thead = document.createElement('thead');
+    thead.className = 'table-dark';
+    const headerRow = thead.insertRow();
+    
+    ['ID', 'Name', 'Type', 'Links'].forEach(headerText => {
+        const th = document.createElement('th');
+        th.style.cursor = 'pointer';
+        th.innerHTML = `${headerText} <span class="sort-indicator" style="margin-left:5px;opacity:0.3">⇅</span>`;
+        th.addEventListener('click', () => sortTable(th, headerText, tbody, data.nodes));
+        headerRow.appendChild(th);
+    });
+    
+    table.appendChild(thead);
+    table.appendChild(document.createElement('tbody'));
 
     // データ行の追加
     const tbody = table.querySelector('tbody');
@@ -70,6 +74,66 @@ function createDataTable(data) {
 
     tableContainer.appendChild(filterDiv);
     tableContainer.appendChild(table);
+
+    function sortTable(th, columnName, tbody, nodes) {
+        const currentSort = th.getAttribute('data-sort') || '';
+        const isAsc = currentSort !== 'asc';
+        
+        // リセット全てのソートインジケーター
+        thead.querySelectorAll('th').forEach(header => {
+            header.setAttribute('data-sort', '');
+            header.querySelector('.sort-indicator').innerHTML = '⇅';
+            header.querySelector('.sort-indicator').style.opacity = '0.3';
+        });
+
+        // 現在のヘッダーの状態を更新
+        th.setAttribute('data-sort', isAsc ? 'asc' : 'desc');
+        th.querySelector('.sort-indicator').innerHTML = isAsc ? '↑' : '↓';
+        th.querySelector('.sort-indicator').style.opacity = '1';
+
+        // ソート実行
+        nodes.sort((a, b) => {
+            let valueA, valueB;
+            
+            switch(columnName) {
+                case 'ID':
+                    valueA = a.id;
+                    valueB = b.id;
+                    break;
+                case 'Name':
+                    valueA = a.name;
+                    valueB = b.name;
+                    break;
+                case 'Type':
+                    valueA = a.type;
+                    valueB = b.type;
+                    break;
+                case 'Links':
+                    valueA = a.links ? a.links.length : 0;
+                    valueB = b.links ? b.links.length : 0;
+                    break;
+            }
+            
+            if (valueA < valueB) return isAsc ? -1 : 1;
+            if (valueA > valueB) return isAsc ? 1 : -1;
+            return 0;
+        });
+
+        // テーブルを再描画
+        tbody.innerHTML = '';
+        nodes.forEach(node => {
+            const tr = document.createElement('tr');
+            tr.setAttribute('data-type', node.type);
+            tr.innerHTML = `
+                <td>${node.id}</td>
+                <td>${node.name}</td>
+                <td><span class="badge bg-${getTypeColor(node.type)}">${node.type}</span></td>
+                <td>${node.links.join(', ') || '-'}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
     return tableContainer;
 }
 
