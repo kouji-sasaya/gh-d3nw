@@ -31,8 +31,32 @@ const svg = d3.select("svg")
 const titleBarHeight = 50; // adjust this value as needed
 const container = svg.append("g");
 
-// Translate the container to the center with a downward adjustment for the title bar
-container.attr("transform", `translate(${width/2},${height/2 + titleBarHeight}) scale(1)`);
+// Translate the container to the center with a larger downward adjustment for the Sunburst
+container.attr("transform", `translate(${width / 2},${height / 2 + titleBarHeight + 100}) scale(1)`);
+
+// Enable panning by dragging the container
+const dragBehavior = d3.drag()
+  .on("start", (event) => {
+    container.attr("cursor", "grabbing");
+    container.attr("dragging", true);
+  })
+  .on("drag", (event) => {
+    const transform = d3.zoomTransform(svg.node());
+    const dx = event.dx / transform.k;
+    const dy = event.dy / transform.k;
+    const currentTransform = container.attr("transform");
+    const match = /translate\(([^,]+),([^)]+)\)/.exec(currentTransform);
+    if (match) {
+      const [_, x, y] = match.map(Number);
+      container.attr("transform", `translate(${x + dx},${y + dy}) scale(${transform.k})`);
+    }
+  })
+  .on("end", () => {
+    container.attr("cursor", "grab");
+    container.attr("dragging", false);
+  });
+
+container.call(dragBehavior).attr("cursor", "grab");
 
 // チェックボックスコンテナの作成
 const checkboxContainer = d3.select("body")

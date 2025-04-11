@@ -19,7 +19,7 @@ const arc = d3.arc()
 const svg = d3.select("svg")
     .attr("width", width)
     .attr("height", height)
-    .attr("viewBox", [-width / 2.2, -height / 2.5, width, height])  // 元の設定に戻す
+    .attr("viewBox", [-width / 2, -height / 2 + 50, width, height]) // Adjusted to account for header height
     .style("font", "10px sans-serif");
 
 // データを読み込んでSunburstを表示
