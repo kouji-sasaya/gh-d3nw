@@ -19,14 +19,45 @@ const svg = d3.select("svg")
   .attr("width", width)
   .attr("height", height)
   .attr("viewBox", [-width / 2, -height / 2, width, height])
-  .attr("style", "max-width: 100%; height: 100%;");
+  .attr("style", "max-width: 100%; height: 100%;")
+  .call(d3.zoom()
+    .scaleExtent([0.1, 4]) // ズームの範囲を0.1倍から4倍に設定
+    .on("zoom", (event) => {
+      container.attr("transform", event.transform);
+    })
+  );
 
 const container = svg.append("g");
+
+// コンテナのトランスフォーム初期化
+container.attr("transform", "translate(0,0) scale(1)");
+
+// チェックボックスコンテナの作成
+const checkboxContainer = d3.select("body")
+  .append("div")
+  .attr("class", "type-checkbox-container")
+  .style("display", "flex")
+  .style("flex-direction", "column");
 
 // データを読み込んでグラフを表示
 fetch('data.json')
     .then(response => response.json())
     .then(data => {
+        // チェックボックスの作成
+        Object.keys(data.config.types).forEach(type => {
+            const label = checkboxContainer.append("label")
+                .style("margin-bottom", "5px");
+
+            label.append("input")
+                .attr("type", "checkbox")
+                .attr("class", "filter-checkbox")
+                .attr("data-group", type)
+                .property("checked", true);
+
+            label.append("span")
+                .text(type);
+        });
+
         const nodes = data.nodes;
         const links = [];
         
@@ -125,45 +156,37 @@ fetch('data.json')
         });
 
         const checkboxes = d3.selectAll(".filter-checkbox");
-        checkboxes.on("change", () => {
+        checkboxes.on("change", function() {
+            // アクティブな型を取得
             const activeTypes = new Set(
-                checkboxes
-                    .filter(function () { return this.checked; })
-                    .nodes()
-                    .map(checkbox => checkbox.dataset.group)
+                Array.from(document.querySelectorAll('.filter-checkbox'))
+                    .filter(cb => cb.checked)
+                    .map(cb => cb.dataset.group)
             );
 
-            nodes.forEach(node => {
-                node.hidden = !activeTypes.has(node.type);
+            // ノードの表示状態を更新
+            node.each(d => {
+                d.hidden = !activeTypes.has(d.type);
             });
 
+            // リンクをフィルタリング
             const filteredLinks = links.filter(link => {
-                if (link.source.hidden || link.target.hidden) {
-                    link.source.fx = null;
-                    link.source.fy = null;
-                    link.target.fx = null;
-                    link.target.fy = null;
-                    return false;
-                }
-                return true;
+                const sourceNode = nodes.find(n => n.id === link.source.id || n.id === link.source);
+                const targetNode = nodes.find(n => n.id === link.target.id || n.id === link.target);
+                return !sourceNode.hidden && !targetNode.hidden;
             });
 
+            // シミュレーションを更新
             simulation.force("link").links(filteredLinks);
-
             simulation.alpha(1).restart();
 
-            nodes.forEach(node => {
-                if (node.hidden) {
-                    node.fx = node.x + 500;
-                    node.fy = node.y + 500;
-                } else {
-                    node.fx = null;
-                    node.fy = null;
-                }
+            // ノードとリンクの表示を更新
+            node.style("display", d => d.hidden ? "none" : "block");
+            link.style("display", d => {
+                const sourceNode = nodes.find(n => n.id === d.source.id || n.id === d.source);
+                const targetNode = nodes.find(n => n.id === d.target.id || n.id === d.target);
+                return (!sourceNode.hidden && !targetNode.hidden) ? "block" : "none";
             });
-
-            node.style("display", d => (d.hidden ? "none" : "block"));
-            link.style("display", d => (!d.source.hidden && !d.target.hidden ? "block" : "none"));
         });
 
         function dragstarted(event) {
@@ -285,45 +308,37 @@ fetch('data.json')
         });
 
         const checkboxes = d3.selectAll(".filter-checkbox");
-        checkboxes.on("change", () => {
+        checkboxes.on("change", function() {
+            // アクティブな型を取得
             const activeTypes = new Set(
-                checkboxes
-                    .filter(function () { return this.checked; })
-                    .nodes()
-                    .map(checkbox => checkbox.dataset.group)
+                Array.from(document.querySelectorAll('.filter-checkbox'))
+                    .filter(cb => cb.checked)
+                    .map(cb => cb.dataset.group)
             );
 
-            nodes.forEach(node => {
-                node.hidden = !activeTypes.has(node.type);
+            // ノードの表示状態を更新
+            node.each(d => {
+                d.hidden = !activeTypes.has(d.type);
             });
 
+            // リンクをフィルタリング
             const filteredLinks = links.filter(link => {
-                if (link.source.hidden || link.target.hidden) {
-                    link.source.fx = null;
-                    link.source.fy = null;
-                    link.target.fx = null;
-                    link.target.fy = null;
-                    return false;
-                }
-                return true;
+                const sourceNode = nodes.find(n => n.id === link.source.id || n.id === link.source);
+                const targetNode = nodes.find(n => n.id === link.target.id || n.id === link.target);
+                return !sourceNode.hidden && !targetNode.hidden;
             });
 
+            // シミュレーションを更新
             simulation.force("link").links(filteredLinks);
-
             simulation.alpha(1).restart();
 
-            nodes.forEach(node => {
-                if (node.hidden) {
-                    node.fx = node.x + 500;
-                    node.fy = node.y + 500;
-                } else {
-                    node.fx = null;
-                    node.fy = null;
-                }
+            // ノードとリンクの表示を更新
+            node.style("display", d => d.hidden ? "none" : "block");
+            link.style("display", d => {
+                const sourceNode = nodes.find(n => n.id === d.source.id || n.id === d.source);
+                const targetNode = nodes.find(n => n.id === d.target.id || n.id === d.target);
+                return (!sourceNode.hidden && !targetNode.hidden) ? "block" : "none";
             });
-
-            node.style("display", d => (d.hidden ? "none" : "block"));
-            link.style("display", d => (!d.source.hidden && !d.target.hidden ? "block" : "none"));
         });
 
         function dragstarted(event) {
