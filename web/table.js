@@ -84,11 +84,33 @@ function getTypeColor(type) {
     return colorMap[type] || 'secondary';
 }
 
+// Hide SVG and show table container
+d3.select('#canvas svg').style('display', 'none');
+const tableContainer = d3.select('#table-container')
+  .style('display', 'block')
+  .style('padding', '20px');
+
+// Clear previous content
+tableContainer.html('');
+
 // データを読み込んでテーブルを表示
 fetch('data.json')
     .then(response => response.json())
     .then(data => {
-        const table = createDataTable(data);
-        document.body.appendChild(table);
+        const tableElement = createDataTable(data);
+        tableContainer.node().appendChild(tableElement);
     })
-    .catch(error => console.error('Error loading data:', error));
+    .catch(error => {
+        console.error('Error loading data:', error);
+        // エラー時はサンプルデータを表示
+        const sampleData = {
+            nodes: [
+                { id: 1, name: "Project A", type: "project", links: ["2", "3"] },
+                { id: 2, name: "Company B", type: "company", links: ["1"] },
+                { id: 3, name: "Service C", type: "service", links: ["1"] },
+                { id: 4, name: "Employee D", type: "employee", links: ["2"] }
+            ]
+        };
+        const tableElement = createDataTable(sampleData);
+        tableContainer.node().appendChild(tableElement);
+    });
