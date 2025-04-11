@@ -39,6 +39,14 @@ const checkboxContainer = d3.select("body")
   .style("display", "flex")
   .style("flex-direction", "column");
 
+// 型名の表示マッピング
+const typeLabels = {
+  'project': 'Projects',
+  'company': 'Companies',
+  'service': 'Services',
+  'employee': 'Employees'
+};
+
 // データを読み込んでグラフを表示
 fetch('data.json')
     .then(response => response.json())
@@ -55,7 +63,7 @@ fetch('data.json')
                 .property("checked", true);
 
             label.append("span")
-                .text(type);
+                .text(typeLabels[type]);
         });
 
         const nodes = data.nodes;
