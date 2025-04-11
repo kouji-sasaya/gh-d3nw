@@ -18,8 +18,7 @@ const color = d3.scaleOrdinal(d3.schemeCategory10);
 const svg = d3.select("svg")
   .attr("width", width)
   .attr("height", height)
-  // Change viewBox to top-left origin
-  .attr("viewBox", `0 0 ${width} ${height}`)
+  .attr("viewBox", [-width / 2, -height / 2, width, height])
   .attr("style", "max-width: 100%; height: 100%;")
   .call(d3.zoom()
     .scaleExtent([0.1, 4]) // ズームの範囲を0.1倍から4倍に設定
@@ -28,11 +27,10 @@ const svg = d3.select("svg")
     })
   );
 
-const titleBarHeight = 50; // adjust this value as needed
 const container = svg.append("g");
 
-// Translate the container to the center with a downward adjustment for the title bar
-container.attr("transform", `translate(${width/2},${height/2 + titleBarHeight}) scale(1)`);
+// コンテナのトランスフォーム初期化
+container.attr("transform", "translate(0,0) scale(1)");
 
 // チェックボックスコンテナの作成
 const checkboxContainer = d3.select("body")
