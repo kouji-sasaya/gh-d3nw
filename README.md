@@ -26,11 +26,11 @@ To view the visualization:
 
 1. Host the files using a local web server:
 ```bash
-python -m http.server 8000
+./service up
 ```
 
 2. Open in browser:
-- Navigate to `http://localhost:8000`
+- Navigate to `http://localhost`
 - The graph will automatically render
 - Drag nodes to reposition
 - Hover over nodes to see details
