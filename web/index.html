@@ -127,15 +127,23 @@
     <script>
       function loadScript(scriptPath) {
         const existingScript = document.querySelector('script[data-dynamic]');
-        if (existingScript) {
-          existingScript.remove();
+        if (existingScript) { existingScript.remove(); }
+        
+        // 常にキャンバス内に正しい構造を保持する
+        document.querySelector('#canvas').innerHTML = "<svg></svg><div id='table-container'></div>";
+        
+        if (scriptPath === 'table.js') {
+          // Tableの場合は、SVGを隠し、#table-container を表示
+          d3.select('#canvas svg').style('display', 'none');
+          d3.select('#table-container').style('display', 'block');
+          document.querySelector('#table-container').innerHTML = "";
+        } else {
+          // Graph, Sunburstの場合は、SVGを表示、Tableコンテナを非表示
+          d3.select('#canvas svg').style('display', 'block');
+          d3.select('#table-container').style('display', 'none');
+          d3.select('#canvas svg').selectAll('*').remove();
         }
-
-        // Reset display states
-        d3.select('#canvas svg').style('display', 'block');
-        d3.select('#table-container').style('display', 'none');
-        d3.select('#canvas svg').selectAll('*').remove();
-
+        
         fetch(scriptPath)
           .then(response => response.text())
           .then(scriptContent => {
