@@ -10,6 +10,7 @@ const navbar = document.querySelector('.navbar');
 const navHeight = navbar ? navbar.clientHeight : 0;
 const availableHeight = height - navHeight;
 const radius = availableHeight * 0.17;  // Reduced further from 0.35 to 0.30 for vertical fit
+const companyColorScale = d3.scaleOrdinal(d3.schemeCategory10); // new scale for company-specific colors
 
 const arc = d3.arc()
     .startAngle(d => d.x0)
@@ -48,8 +49,14 @@ fetch('data.json')
             .data(root.descendants().slice(1))
             .join("path")
             .attr("fill", d => {
-                while (d.depth > 1) d = d.parent;
-                return color(d.data.name);
+                const ancestors = d.ancestors();
+                const companyAncestor = ancestors.find(a => a.data.type === "company");
+                if (companyAncestor) {
+                    return companyColorScale(companyAncestor.data.name);
+                }
+                let node = d;
+                while (node.depth > 1) node = node.parent;
+                return color(node.data.name);
             })
             .attr("fill-opacity", d => arcVisible(d.current) ? (d.children ? 0.6 : 0.4) : 0)
             .attr("pointer-events", d => arcVisible(d.current) ? "auto" : "none")
@@ -140,6 +147,7 @@ function formatData(data) {
         companies.forEach(company => {
             const companyNode = {
                 name: company.name,
+                type: "company", // mark company nodes
                 children: []
             };
 
