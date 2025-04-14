@@ -6,7 +6,10 @@ d3.select('#table-container').style('display', 'none');
 const container = document.getElementById('canvas');
 const width = container.clientWidth;
 const height = container.clientHeight;
-const radius = Math.min(width, height) / 7;  // radiusを1/7に縮小
+const navbar = document.querySelector('.navbar');
+const navHeight = navbar ? navbar.clientHeight : 0;
+const availableHeight = height - navHeight;
+const radius = availableHeight * 0.17;  // Reduced further from 0.35 to 0.30 for vertical fit
 
 const arc = d3.arc()
     .startAngle(d => d.x0)
@@ -18,8 +21,8 @@ const arc = d3.arc()
 
 const svg = d3.select("svg")
     .attr("width", width)
-    .attr("height", height)
-    .attr("viewBox", [-width / 2.2, -height / 2.5, width, height])  // 元の設定に戻す
+    .attr("height", availableHeight)
+    .attr("viewBox", [-width/2, -availableHeight/2, width, availableHeight])  // Center the viewBox based on availableHeight
     .style("font", "10px sans-serif");
 
 // データを読み込んでSunburstを表示
