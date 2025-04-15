@@ -122,7 +122,7 @@ fetch('data.json')
                 if (d.type === "service") {
                     if (d.name.toLowerCase() === "github") {
                         d3.select(this).append("image")
-                            .attr("xlink:href", "github-mark.svg")
+                            .attr("xlink:href", "github.svg")
                             .attr("width", data.config.types[d.type].size / 2)
                             .attr("height", data.config.types[d.type].size / 2)
                             .attr("x", -data.config.types[d.type].size / 4)
