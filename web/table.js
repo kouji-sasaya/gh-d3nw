@@ -2,9 +2,7 @@ function createDataTable(data) {
     const tableContainer = document.createElement('div');
     tableContainer.className = 'container mt-4';
 
-    // Add a variable to store the active filter (all by default)
     let currentFilter = "all";
-    // Add variables to store the current sort column and order
     let currentSortColumn = null;
     let currentSortOrder = null;
 
@@ -24,13 +22,13 @@ function createDataTable(data) {
     // テーブル作成
     const table = document.createElement('table');
     table.className = 'table table-striped table-hover';
-    
-    // ヘッダー作成を修正
+
+    // ヘッダー作成を修正 (追加: "Address")
     const thead = document.createElement('thead');
     thead.className = 'table-dark';
     const headerRow = thead.insertRow();
     
-    ['ID', 'Name', 'Type', 'Links'].forEach(headerText => {
+    ['ID', 'Name', 'Address', 'Type', 'Links'].forEach(headerText => {
         const th = document.createElement('th');
         th.style.cursor = 'pointer';
         th.innerHTML = `${headerText} <span class="sort-indicator" style="margin-left:5px;opacity:0.3">⇅</span>`;
@@ -57,6 +55,10 @@ function createDataTable(data) {
                         valueA = a.name;
                         valueB = b.name;
                         break;
+                    case 'Address':
+                        valueA = a.address;
+                        valueB = b.address;
+                        break;
                     case 'Type':
                         valueA = a.type;
                         valueB = b.type;
@@ -78,6 +80,7 @@ function createDataTable(data) {
             tr.innerHTML = `
                 <td>${node.id}</td>
                 <td>${node.name}</td>
+                <td>${node.address || '-'}</td>
                 <td><span class="badge bg-${getTypeColor(node.type)}">${node.type}</span></td>
                 <td>${node.links.join(', ') || '-'}</td>
             `;
@@ -85,20 +88,16 @@ function createDataTable(data) {
         });
     }
 
-    // Update filter event to re-render table
     filterDiv.addEventListener('click', (e) => {
         if (e.target.hasAttribute('data-filter')) {
             const filterValue = e.target.getAttribute('data-filter');
-            currentFilter = filterValue; // update active filter
-            filterDiv.querySelectorAll('button').forEach(btn => {
-                btn.classList.remove('active');
-            });
+            currentFilter = filterValue;
+            filterDiv.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
             e.target.classList.add('active');
             updateTable();
         }
     });
 
-    // Modified sortTable function: update sort state and re-render table
     function sortTable(th, columnName, tbody, nodes) {
         const currentSort = th.getAttribute('data-sort') || '';
         const isAsc = currentSort !== 'asc';
@@ -110,7 +109,6 @@ function createDataTable(data) {
             header.querySelector('.sort-indicator').style.opacity = '0.3';
         });
 
-        // 現在のヘッダーの状態を更新
         th.setAttribute('data-sort', isAsc ? 'asc' : 'desc');
         th.querySelector('.sort-indicator').innerHTML = isAsc ? '↑' : '↓';
         th.querySelector('.sort-indicator').style.opacity = '1';
@@ -120,7 +118,6 @@ function createDataTable(data) {
         updateTable();
     }
 
-    // 初期レンダリング
     updateTable();
 
     tableContainer.appendChild(filterDiv);
@@ -161,10 +158,10 @@ fetch('data.json')
         // エラー時はサンプルデータを表示
         const sampleData = {
             nodes: [
-                { id: 1, name: "Project A", type: "project", links: ["2", "3"] },
-                { id: 2, name: "Company B", type: "company", links: ["1"] },
-                { id: 3, name: "Service C", type: "service", links: ["1"] },
-                { id: 4, name: "Employee D", type: "employee", links: ["2"] }
+                { id: 1, name: "Project A", address: "123 Main St", type: "project", links: ["2", "3"] },
+                { id: 2, name: "Company B", address: "456 Elm St", type: "company", links: ["1"] },
+                { id: 3, name: "Service C", address: "789 Oak St", type: "service", links: ["1"] },
+                { id: 4, name: "Employee D", address: "101 Pine St", type: "employee", links: ["2"] }
             ]
         };
         const tableElement = createDataTable(sampleData);
