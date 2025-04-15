@@ -2,6 +2,12 @@ function createDataTable(data) {
     const tableContainer = document.createElement('div');
     tableContainer.className = 'container mt-4';
 
+    // Add a variable to store the active filter (all by default)
+    let currentFilter = "all";
+    // Add variables to store the current sort column and order
+    let currentSortColumn = null;
+    let currentSortOrder = null;
+
     // フィルターコントロール
     const filterDiv = document.createElement('div');
     filterDiv.className = 'mb-3';
@@ -33,48 +39,66 @@ function createDataTable(data) {
     });
     
     table.appendChild(thead);
-    table.appendChild(document.createElement('tbody'));
+    const tbody = document.createElement('tbody');
+    table.appendChild(tbody);
 
-    // データ行の追加
-    const tbody = table.querySelector('tbody');
-    data.nodes.forEach(node => {
-        const tr = document.createElement('tr');
-        tr.setAttribute('data-type', node.type);
-        tr.innerHTML = `
-            <td>${node.id}</td>
-            <td>${node.name}</td>
-            <td><span class="badge bg-${getTypeColor(node.type)}">${node.type}</span></td>
-            <td>${node.links.join(', ') || '-'}</td>
-        `;
-        tbody.appendChild(tr);
-    });
+    // New function to render the table body based on currentFilter and sort state.
+    function updateTable() {
+        let filteredNodes = data.nodes.filter(n => currentFilter === 'all' ? true : n.type === currentFilter);
+        if (currentSortColumn) {
+            filteredNodes.sort((a, b) => {
+                let valueA, valueB;
+                switch(currentSortColumn) {
+                    case 'ID':
+                        valueA = a.id;
+                        valueB = b.id;
+                        break;
+                    case 'Name':
+                        valueA = a.name;
+                        valueB = b.name;
+                        break;
+                    case 'Type':
+                        valueA = a.type;
+                        valueB = b.type;
+                        break;
+                    case 'Links':
+                        valueA = a.links ? a.links.length : 0;
+                        valueB = b.links ? b.links.length : 0;
+                        break;
+                }
+                if (valueA < valueB) return currentSortOrder === 'asc' ? -1 : 1;
+                if (valueA > valueB) return currentSortOrder === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+        tbody.innerHTML = '';
+        filteredNodes.forEach(node => {
+            const tr = document.createElement('tr');
+            tr.setAttribute('data-type', node.type);
+            tr.innerHTML = `
+                <td>${node.id}</td>
+                <td>${node.name}</td>
+                <td><span class="badge bg-${getTypeColor(node.type)}">${node.type}</span></td>
+                <td>${node.links.join(', ') || '-'}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
 
-    // フィルター機能
+    // Update filter event to re-render table
     filterDiv.addEventListener('click', (e) => {
         if (e.target.hasAttribute('data-filter')) {
             const filterValue = e.target.getAttribute('data-filter');
-            const rows = tbody.querySelectorAll('tr');
-            
-            // ボタンのアクティブ状態を更新
+            currentFilter = filterValue; // update active filter
             filterDiv.querySelectorAll('button').forEach(btn => {
                 btn.classList.remove('active');
             });
             e.target.classList.add('active');
-
-            // 行の表示/非表示を切り替え
-            rows.forEach(row => {
-                if (filterValue === 'all' || row.getAttribute('data-type') === filterValue) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
+            updateTable();
         }
     });
 
-    tableContainer.appendChild(filterDiv);
-    tableContainer.appendChild(table);
-
+    // Modified sortTable function: update sort state and re-render table
     function sortTable(th, columnName, tbody, nodes) {
         const currentSort = th.getAttribute('data-sort') || '';
         const isAsc = currentSort !== 'asc';
@@ -91,48 +115,16 @@ function createDataTable(data) {
         th.querySelector('.sort-indicator').innerHTML = isAsc ? '↑' : '↓';
         th.querySelector('.sort-indicator').style.opacity = '1';
 
-        // ソート実行
-        nodes.sort((a, b) => {
-            let valueA, valueB;
-            
-            switch(columnName) {
-                case 'ID':
-                    valueA = a.id;
-                    valueB = b.id;
-                    break;
-                case 'Name':
-                    valueA = a.name;
-                    valueB = b.name;
-                    break;
-                case 'Type':
-                    valueA = a.type;
-                    valueB = b.type;
-                    break;
-                case 'Links':
-                    valueA = a.links ? a.links.length : 0;
-                    valueB = b.links ? b.links.length : 0;
-                    break;
-            }
-            
-            if (valueA < valueB) return isAsc ? -1 : 1;
-            if (valueA > valueB) return isAsc ? 1 : -1;
-            return 0;
-        });
-
-        // テーブルを再描画
-        tbody.innerHTML = '';
-        nodes.forEach(node => {
-            const tr = document.createElement('tr');
-            tr.setAttribute('data-type', node.type);
-            tr.innerHTML = `
-                <td>${node.id}</td>
-                <td>${node.name}</td>
-                <td><span class="badge bg-${getTypeColor(node.type)}">${node.type}</span></td>
-                <td>${node.links.join(', ') || '-'}</td>
-            `;
-            tbody.appendChild(tr);
-        });
+        currentSortColumn = columnName;
+        currentSortOrder = isAsc ? 'asc' : 'desc';
+        updateTable();
     }
+
+    // 初期レンダリング
+    updateTable();
+
+    tableContainer.appendChild(filterDiv);
+    tableContainer.appendChild(table);
 
     return tableContainer;
 }

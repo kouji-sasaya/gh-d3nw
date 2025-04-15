@@ -92,14 +92,14 @@
       "links": []
     },
     {
-      "id": "s1",
+      "id": "S0001",
       "address": "",
       "name": "GitLab",
       "type": "service",
       "links": ["P0001"]
     },
     {
-      "id": "s2",
+      "id": "S0002",
       "address": "",
       "name": "GitHub",
       "type": "service",
