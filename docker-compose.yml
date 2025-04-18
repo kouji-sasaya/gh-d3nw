@@ -1,4 +1,3 @@
-version: "3.8"
 services:
   web:
     container_name: web
@@ -6,4 +5,5 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./web:/usr/share/nginx/html:ro
+      - ${HOME}/.local/share/gh/extensions/gh-d3nw/web/:/usr/share/nginx/html/:rw
+      - ${PWD}/data.json:/usr/share/nginx/html/data.json:ro
