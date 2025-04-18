@@ -1,0 +1,7 @@
+{
+  "nodes": [
+    { "id": "P0001", "address": "www.project-x.com", "name": "Project X", "type": "project", "links": [] },
+    { "id": "P0002", "address": "www.project-y.com", "name": "Project Y", "type": "project", "links": [] },
+    { "id": "P0003", "address": "www.project-z.com", "name": "Project Z", "type": "project", "links": [] }
+  ]
+}

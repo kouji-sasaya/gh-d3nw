@@ -2,7 +2,7 @@ class GraphStore {
   constructor() {
     this.nodes = [];
     this.links = [];
-    this.filters = new Set(['project', 'company', 'service', 'employee']);
+    this.filters = new Set(['project', 'domain', 'service', 'employee']);
   }
 
   setData(nodes, links) {

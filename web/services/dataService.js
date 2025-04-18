@@ -29,11 +29,11 @@ class DataService {
           });
         });
       }
-      if (d.company) {
+      if (d.domain) {
         links.push({
           source: d.id,
-          target: d.company,
-          type: 'company'
+          target: d.domain,
+          type: 'domain'
         });
       }
       if (d.services) {
@@ -56,7 +56,7 @@ class DataService {
   _getGroupId(node) {
     const groupMap = {
       'project': 1,
-      'company': 2,
+      'domain': 2,
       'service': 3,
       'employee': 4
     };

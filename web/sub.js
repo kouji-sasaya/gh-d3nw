@@ -13,7 +13,7 @@ function createTable(data) {
   const thead = table.append("thead");
   thead.append("tr")
     .selectAll("th")
-    .data(["ID", "Name", "Type", "Projects", "Company", "Nickname", "Services"])
+    .data(["ID", "Name", "Type", "Projects", "domain", "Nickname", "Services"])
     .enter()
     .append("th")
     .text(d => d)
@@ -33,7 +33,7 @@ function createTable(data) {
       d.name,
       d.type,
       d.projects ? d.projects.join(", ") : "",
-      d.company,
+      d.domain,
       d.nickname,
       d.services ? d.services.join(", ") : ""
     ])

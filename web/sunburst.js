@@ -10,7 +10,7 @@ const navbar = document.querySelector('.navbar');
 const navHeight = navbar ? navbar.clientHeight : 0;
 const availableHeight = height - navHeight;
 const radius = availableHeight * 0.17;  // Reduced further from 0.35 to 0.30 for vertical fit
-const companyColorScale = d3.scaleOrdinal(d3.schemeCategory10); // new scale for company-specific colors
+const domainColorScale = d3.scaleOrdinal(d3.schemeCategory10); // new scale for domain-specific colors
 
 const arc = d3.arc()
     .startAngle(d => d.x0)
@@ -50,9 +50,9 @@ fetch('data.json')
             .join("path")
             .attr("fill", d => {
                 const ancestors = d.ancestors();
-                const companyAncestor = ancestors.find(a => a.data.type === "company");
-                if (companyAncestor) {
-                    return companyColorScale(companyAncestor.data.name);
+                const domainAncestor = ancestors.find(a => a.data.type === "domain");
+                if (domainAncestor) {
+                    return domainColorScale(domainAncestor.data.name);
                 }
                 let node = d;
                 while (node.depth > 1) node = node.parent;
@@ -134,9 +134,9 @@ function formatData(data) {
             children: []
         };
 
-        // プロジェクトに関連する会社を追加
-        const companies = data.nodes.filter(n => 
-            n.type === "company" && 
+        // プロジェクトに関連するドメインを追加
+        const domains = data.nodes.filter(n => 
+            n.type === "domain" && 
             data.nodes.some(e => 
                 e.type === "employee" && 
                 e.links.includes(project.id) && 
@@ -144,28 +144,28 @@ function formatData(data) {
             )
         );
 
-        companies.forEach(company => {
-            const companyNode = {
-                name: company.name,
-                type: "company", // mark company nodes
+        domains.forEach(domain => {
+            const domainNode = {
+                name: domain.name,
+                type: "domain", // mark domain nodes
                 children: []
             };
 
             // 会社に所属する従業員を追加
             const employees = data.nodes.filter(n => 
                 n.type === "employee" && 
-                n.links.includes(company.id) && 
+                n.links.includes(domain.id) && 
                 n.links.includes(project.id)
             );
 
             employees.forEach(employee => {
-                companyNode.children.push({
+                domainNode.children.push({
                     name: employee.name
                 });
             });
 
-            if (companyNode.children.length > 0) {
-                projectNode.children.push(companyNode);
+            if (domainNode.children.length > 0) {
+                projectNode.children.push(domainNode);
             }
         });
 

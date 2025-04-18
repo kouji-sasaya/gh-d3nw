@@ -54,7 +54,7 @@ The data.json file contains the following structure:
     "version": "1.0",
     "types": {
       "project": {"size": 100, "color": "#4285F4"},
-      "company": {"size": 70, "color": "#DB4437"},
+      "domain": {"size": 70, "color": "#DB4437"},
       "service": {"size": 40, "color": "#F4B400"},
       "employee": {"size": 20, "color": "#0F9D58"}
     }
@@ -64,7 +64,7 @@ The data.json file contains the following structure:
 
 Node types:
 - project: Major initiatives or projects
-- company: Organizations involved
+- domain: Organizations involved
 - service: External tools or platforms
 - employee: Individual team members
 

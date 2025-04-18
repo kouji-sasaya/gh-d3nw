@@ -42,7 +42,7 @@ const checkboxContainer = d3.select("body")
 // 型名の表示マッピング
 const typeLabels = {
   'project': 'Projects',
-  'company': 'Companies',
+  'domain': 'Domains',
   'service': 'Services',
   'employee': 'Employees'
 };
@@ -232,7 +232,7 @@ fetch('data.json')
         const sampleData = {
             nodes: [
                 { id: 1, name: "Project A", type: "project", links: ["2", "3"] },
-                { id: 2, name: "Company B", type: "company", links: ["1"] },
+                { id: 2, name: "domain B", type: "domain", links: ["1"] },
                 { id: 3, name: "Service C", type: "service", links: ["1"] },
                 { id: 4, name: "Employee D", type: "employee", links: ["2"] }
             ]
