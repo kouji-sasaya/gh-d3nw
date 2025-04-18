@@ -5,5 +5,5 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ${HOME}/.local/share/gh/extensions/gh-d3nw/web/:/usr/share/nginx/html/:rw
+      - ${HOME}/.local/share/gh/extensions/gh-d3nw/web/:/usr/share/nginx/html/:ro
       - ${PWD}/data.json:/usr/share/nginx/html/data.json:ro

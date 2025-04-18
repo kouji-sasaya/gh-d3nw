@@ -12,6 +12,7 @@ fi
 TOP=$(dirname "$0")
 
 if [ "$1" = "up" ]; then
+  touch ${TOP}/web/data.json
   docker compose -f ${TOP}/docker-compose.yml --env-file .env  up -d
   exit 0
 fi
@@ -29,7 +30,7 @@ fi
 if [ "$1" = "install" ]; then
   # If not exist data.json
   if [ ! -f data.json ]; then
-    cp ~/${TOP}/data.json .
+    cp ${TOP}/data.json .
   fi
   # If not exist .env
   if [ ! -f .env ]; then
