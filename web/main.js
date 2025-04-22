@@ -44,7 +44,7 @@ const typeLabels = {
   'project': 'Projects',
   'domain': 'Domains',
   'service': 'Services',
-  'employee': 'Employees'
+  'user': 'Users'
 };
 
 // データを読み込んでグラフを表示
@@ -82,7 +82,7 @@ fetch('data.json')
 
         const simulation = d3.forceSimulation(nodes)
             .force("link", d3.forceLink(links).id(d => d.id).distance(d => {
-                if (nodes.find(node => node.id === d.source.id)?.type === "employee") {
+                if (nodes.find(node => node.id === d.source.id)?.type === "user") {
                     return 50 * 3;
                 }
                 return 50 * 3;
@@ -234,7 +234,7 @@ fetch('data.json')
                 { id: 1, name: "Project A", type: "project", links: ["2", "3"] },
                 { id: 2, name: "domain B", type: "domain", links: ["1"] },
                 { id: 3, name: "Service C", type: "service", links: ["1"] },
-                { id: 4, name: "Employee D", type: "employee", links: ["2"] }
+                { id: 4, name: "User D", type: "user", links: ["2"] }
             ]
         };
 
@@ -254,7 +254,7 @@ fetch('data.json')
 
         const simulation = d3.forceSimulation(nodes)
             .force("link", d3.forceLink(links).id(d => d.id).distance(d => {
-                if (nodes.find(node => node.id === d.source.id)?.type === "employee") {
+                if (nodes.find(node => node.id === d.source.id)?.type === "user") {
                     return 50 * 3;
                 }
                 return 50 * 3;

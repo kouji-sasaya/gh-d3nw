@@ -58,7 +58,7 @@ class DataService {
       'project': 1,
       'domain': 2,
       'service': 3,
-      'employee': 4
+      'user': 4
     };
     return groupMap[node.type] || 0;
   }

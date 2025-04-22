@@ -4,6 +4,15 @@ async function loadData() {
   return json.data;
 }
 
+const sampleData = {
+    nodes: [
+        { id: 1, name: "Project A", address: "123 Main St", type: "project", links: ["2", "3"] },
+        { id: 2, name: "domain B", address: "456 Elm St", type: "domain", links: ["1"] },
+        { id: 3, name: "Service C", address: "789 Oak St", type: "service", links: ["1"] },
+        { id: 4, name: "User D", address: "101 Pine St", type: "user", links: ["2"] }
+    ]
+};
+
 function createTable(data) {
   const table = d3.select("body")
     .append("table")

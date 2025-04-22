@@ -138,7 +138,7 @@ function formatData(data) {
         const domains = data.nodes.filter(n => 
             n.type === "domain" && 
             data.nodes.some(e => 
-                e.type === "employee" && 
+                e.type === "user" && 
                 e.links.includes(project.id) && 
                 e.links.includes(n.id)
             )
@@ -151,16 +151,16 @@ function formatData(data) {
                 children: []
             };
 
-            // 会社に所属する従業員を追加
-            const employees = data.nodes.filter(n => 
-                n.type === "employee" && 
+            // 会社に所属するユーザーを追加
+            const users = data.nodes.filter(n => 
+                n.type === "user" && 
                 n.links.includes(domain.id) && 
                 n.links.includes(project.id)
             );
 
-            employees.forEach(employee => {
+            users.forEach(user => {
                 domainNode.children.push({
-                    name: employee.name
+                    name: user.name
                 });
             });
 

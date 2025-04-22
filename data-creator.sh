@@ -38,14 +38,14 @@ for i in $(seq 1 999); do
     animal=${animals[$RANDOM % ${#animals[@]}]}
     genre=${genres[$RANDOM % ${#genres[@]}]}
     NAME=$(echo "$animal $genre")
-    printf '    { "id": "E%04d", "address": "", "name": "%s", "type": "employee", "links": ["P%04d", "D%04d"]   },\n' "${i}" "${NAME}" "$(($RANDOM % 3 + 1))" "$(($RANDOM % 10 + 1))"
+    printf '    { "id": "U%04d", "address": "", "name": "%s", "type": "user", "links": ["P%04d", "D%04d"]   },\n' "${i}" "${NAME}" "$(($RANDOM % 3 + 1))" "$(($RANDOM % 10 + 1))"
 done
 
 i=$((i + 1))
-printf '    { "id": "E%04d", "address": "", "name": "%s", "type": "employee", "links": ["P%04d", "D%04d"]   }\n' "${i}" "${NAME}" "$(($RANDOM % 3 + 1))" "$(($RANDOM % 10 + 1))"
+printf '    { "id": "U%04d", "address": "", "name": "%s", "type": "user", "links": ["P%04d", "D%04d"]   }\n' "${i}" "${NAME}" "$(($RANDOM % 3 + 1))" "$(($RANDOM % 10 + 1))"
 echo '  ],'
 echo '  "config": { "version": "1.0", "lastUpdated": "2023-11-15", "types": {'
 echo '  "project": { "size": 100, "color": "#4285F4" },'
 echo '  "domain": { "size": 70, "color": "#DB4437" },'
 echo '  "service": { "size": 40, "color": "#F4B400" },'
-echo '  "employee": { "size": 20, "color": "#0F9D58" } } } }'
+echo '  "user": { "size": 20, "color": "#0F9D58" } } } }'

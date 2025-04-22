@@ -15,7 +15,7 @@ function createDataTable(data) {
             <button type="button" class="btn btn-primary" data-filter="project">Projects</button>
             <button type="button" class="btn btn-primary" data-filter="domain">Domains</button>
             <button type="button" class="btn btn-primary" data-filter="service">Services</button>
-            <button type="button" class="btn btn-primary" data-filter="employee">Employees</button>
+            <button type="button" class="btn btn-primary" data-filter="user">Users</button>
         </div>
     `;
 
@@ -132,7 +132,7 @@ function getTypeColor(type) {
         project: 'primary',
         domain: 'danger',
         service: 'warning',
-        employee: 'success'
+        user: 'success'
     };
     return colorMap[type] || 'secondary';
 }
@@ -161,7 +161,7 @@ fetch('data.json')
                 { id: 1, name: "Project A", address: "123 Main St", type: "project", links: ["2", "3"] },
                 { id: 2, name: "domain B", address: "456 Elm St", type: "domain", links: ["1"] },
                 { id: 3, name: "Service C", address: "789 Oak St", type: "service", links: ["1"] },
-                { id: 4, name: "Employee D", address: "101 Pine St", type: "employee", links: ["2"] }
+                { id: 4, name: "User D", address: "101 Pine St", type: "user", links: ["2"] }
             ]
         };
         const tableElement = createDataTable(sampleData);
