@@ -70,13 +70,6 @@ Node types:
 
 Links represent relationships between nodes.
 
-## Reference
-
-* [ionicons](https://ionic.io/ionicons)
-* [d3.js](https://d3js.org/)
-
-
-
 ## License
 
 MIT License
