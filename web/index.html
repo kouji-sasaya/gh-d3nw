@@ -7,29 +7,30 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- style.css読み込み -->
     <link rel="stylesheet" href="style.css">
-  </head>
+   
   <body>
-    <div class="navigation">
-      <ul>
-        <li class="active">
-          <a href="#" onclick="loadScript('table.js')">
-            <span class="icon"><ion-icon name="reader-outline"></ion-icon></span>
-            <span class="title">Table</span>
-          </a>
-        </li>
-        <li>
-          <a href="#" onclick="loadScript('main.js')">
-            <span class="icon"><ion-icon name="git-network-outline"></ion-icon></span>
-            <span class="title">Network</span>
-          </a>
-        </li>
-        <li>
-          <a href="#" onclick="loadScript('sunburst.js')">
-            <span class="icon"><ion-icon name="aperture-outline"></ion-icon></span>
-            <span class="title">Sunburst</span>
-          </a>
-        </li>
-      </ul>
+    <!--nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">d3.js Network</a>
+      </div>
+    </nav-->
+
+    <button id="sidebar-toggle">☰</button>
+    <div id="sidebar">
+      <div class="list-group">
+        <a href="#">
+          <span class="icon"><ion-icon name="reader-outline"></ion-icon></span>
+          <span class="title" onclick="loadScript('table.js')">Table</span>
+        </a>
+        <a href="#">
+          <span class="icon"><ion-icon name="git-network-outline"></ion-icon></span>
+          <span class="title" onclick="loadScript('main.js')">Network</span>
+        </a>
+        <a href="#">
+          <span class="icon"><ion-icon name="aperture-outline"></ion-icon></span>
+          <span class="title" onclick="loadScript('sunburst.js')">Sunburst</span>
+        </a>
+      </div>
     </div>
 
     <div id="canvas">
@@ -77,6 +78,16 @@
       // Load table.js by default on page load
       document.addEventListener('DOMContentLoaded', () => {
         loadScript('table.js');
+      });
+
+      document.getElementById('sidebar-toggle').addEventListener('click', function() {
+        const sidebar = document.getElementById('sidebar');
+        const canvas = document.getElementById('canvas');
+        const toggle = document.getElementById('sidebar-toggle');
+        
+        sidebar.classList.toggle('closed');
+        canvas.classList.toggle('full');
+        toggle.classList.toggle('closed');
       });
     </script>
   </body>
