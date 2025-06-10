@@ -49,7 +49,7 @@ const typeLabels = {
 
 // データを読み込んでグラフを表示
 fetch('data.json')
-    .then(() => loadData())
+    .then(response => response.json())
     .then(data => {
         // チェックボックスの作成
         Object.keys(data.config.types).forEach(type => {
@@ -83,9 +83,9 @@ fetch('data.json')
         const simulation = d3.forceSimulation(nodes)
             .force("link", d3.forceLink(links).id(d => d.id).distance(d => {
                 if (nodes.find(node => node.id === d.source.id)?.type === "user") {
-                    return data.config.types[d.type].size * 3;
+                    return 50 * 3;
                 }
-                return data.config.types[d.type].size * 3;
+                return 50 * 3;
             }))
             .force("charge", d3.forceManyBody().strength(-30))
             .force("x", d3.forceX())

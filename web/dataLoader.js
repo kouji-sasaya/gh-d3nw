@@ -1,14 +1,9 @@
 export async function loadData() {
-  const [dataResponse, configResponse] = await Promise.all([
-    fetch("data.json"),
-    fetch("config.json")
-  ]);
-
-  const dataJson = await dataResponse.json();
-  const configJson = await configResponse.json();
-
+  const response = await fetch("data.json");
+  const json = await response.json();
+  
   // Generate links based on parent-child relationships
-  const links = dataJson.nodes.reduce((acc, node) => {
+  const links = json.nodes.reduce((acc, node) => {
     if (node.children) {
       node.children.forEach(childId => {
         acc.push({
@@ -21,8 +16,8 @@ export async function loadData() {
   }, []);
 
   return {
-    nodes: dataJson.nodes,
+    nodes: json.nodes,
     links: links,
-    config: configJson
+    config: json.config
   };
 }

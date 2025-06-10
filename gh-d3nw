@@ -1,19 +1,21 @@
 #!/bin/sh
+set -e
 
+
+CMD=$(basename $0 | tr '-' ' ')
 if [ "$#" -eq 0 ]; then
     echo "Usage:"
-    echo " $0 install"
-    echo " $0 up"
-    echo " $0 down"
-    echo " $0 shell"
+    echo " $CMD install"
+    echo " $CMD up"
+    echo " $CMD down"
+    echo " $CMD shell"
     exit 1
 fi
 
 TOP=$(dirname "$0")
 
 if [ "$1" = "up" ]; then
-  touch ${TOP}/web/data.json
-  docker compose -f ${TOP}/docker-compose.yml --env-file .env  up -d
+  docker compose -f ${TOP}/docker-compose.yml --env-file .env up -d
   exit 0
 fi
 

@@ -128,7 +128,13 @@ function createDataTable(data) {
 
 // タイプに応じたBootstrapの色を返す
 function getTypeColor(type) {
-    return data.config.types[type]?.color || 'secondary';
+    const colorMap = {
+        project: 'primary',
+        domain: 'danger',
+        service: 'warning',
+        user: 'success'
+    };
+    return colorMap[type] || 'secondary';
 }
 
 // Hide SVG and show table container
@@ -142,7 +148,7 @@ tableContainer.html('');
 
 // データを読み込んでテーブルを表示
 fetch('data.json')
-    .then(() => loadData())
+    .then(response => response.json())
     .then(data => {
         const tableElement = createDataTable(data);
         tableContainer.node().appendChild(tableElement);
