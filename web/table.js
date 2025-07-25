@@ -167,3 +167,6 @@ fetch('data.json')
         const tableElement = createDataTable(sampleData);
         tableContainer.node().appendChild(tableElement);
     });
+
+const sb = document.getElementById('network-scrollbar-container');
+if (sb) sb.style.display = 'none';

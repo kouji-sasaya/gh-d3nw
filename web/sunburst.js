@@ -239,3 +239,6 @@ function labelTransform(d) {
     const y = ((d.y0 + d.y1) / 2) * radius;
     return `rotate(${x - 90}) translate(${y},0) rotate(${x < 180 ? 0 : 180})`;
 }
+
+const sb = document.getElementById('network-scrollbar-container');
+if (sb) sb.style.display = 'none';

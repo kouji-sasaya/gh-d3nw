@@ -2,6 +2,52 @@
 d3.select('#canvas svg').style('display', 'block');
 d3.select('#table-container').style('display', 'none');
 
+// --- スクロールバーを #canvas の直後に描画 ---
+let scrollbarContainer = document.getElementById('network-scrollbar-container');
+if (!scrollbarContainer) {
+  scrollbarContainer = document.createElement('div');
+  scrollbarContainer.id = 'network-scrollbar-container';
+  scrollbarContainer.style.position = 'relative';
+  scrollbarContainer.style.width = '100vw';
+  scrollbarContainer.style.margin = '0 auto';
+  scrollbarContainer.style.textAlign = 'center';
+  scrollbarContainer.style.background = 'rgba(255,255,255,0.5)'; // 半透明
+  scrollbarContainer.style.backdropFilter = 'blur(2px)';
+  scrollbarContainer.style.padding = '8px 0 4px 0';
+
+  scrollbarContainer.innerHTML = `
+    <input
+      type="range"
+      id="network-scrollbar"
+      min="-100"
+      max="100"
+      value="0"
+      style="width: 60%;"
+    >
+    <span id="network-scrollbar-value">0%</span>
+  `;
+  // #canvasの直後に挿入
+  const canvas = document.getElementById('canvas');
+  if (canvas.nextSibling) {
+    canvas.parentNode.insertBefore(scrollbarContainer, canvas.nextSibling);
+  } else {
+    canvas.parentNode.appendChild(scrollbarContainer);
+  }
+} else {
+  scrollbarContainer.style.display = 'block';
+}
+
+// スクロールバーの値表示を更新
+const scrollbar = document.getElementById('network-scrollbar');
+const scrollbarValue = document.getElementById('network-scrollbar-value');
+if (scrollbar && scrollbarValue) {
+  scrollbar.addEventListener('input', function () {
+    scrollbarValue.textContent = `${this.value}%`;
+  });
+  scrollbar.value = 0;
+  scrollbarValue.textContent = '0%';
+}
+
 // カラーパレットの定義
 const colorScale = d3.scaleOrdinal()
   .range([
@@ -47,6 +93,10 @@ const typeLabels = {
   'user': 'Users'
 };
 
+// グローバルで管理
+let linkDistance = 150;
+let simulation = null;
+
 // データを読み込んでグラフを表示
 fetch('data.json')
     .then(response => response.json())
@@ -80,13 +130,9 @@ fetch('data.json')
             }
         });
 
-        const simulation = d3.forceSimulation(nodes)
-            .force("link", d3.forceLink(links).id(d => d.id).distance(d => {
-                if (nodes.find(node => node.id === d.source.id)?.type === "user") {
-                    return 50 * 3;
-                }
-                return 50 * 3;
-            }))
+        // シミュレーション作成
+        simulation = d3.forceSimulation(nodes)
+            .force("link", d3.forceLink(links).id(d => d.id).distance(linkDistance))
             .force("charge", d3.forceManyBody().strength(-30))
             .force("x", d3.forceX())
             .force("y", d3.forceY())
@@ -252,13 +298,9 @@ fetch('data.json')
             }
         });
 
-        const simulation = d3.forceSimulation(nodes)
-            .force("link", d3.forceLink(links).id(d => d.id).distance(d => {
-                if (nodes.find(node => node.id === d.source.id)?.type === "user") {
-                    return 50 * 3;
-                }
-                return 50 * 3;
-            }))
+        // シミュレーション作成
+        simulation = d3.forceSimulation(nodes)
+            .force("link", d3.forceLink(links).id(d => d.id).distance(linkDistance))
             .force("charge", d3.forceManyBody().strength(-30))
             .force("x", d3.forceX())
             .force("y", d3.forceY())
@@ -379,3 +421,17 @@ fetch('data.json')
             d.fy = null;
         });
     });
+
+// --- ここから下を追加 ---
+document.addEventListener('keydown', function(e) {
+    if (!simulation) return; // simulationがまだ生成されていない場合は何もしない
+    if (e.key === "ArrowUp") {
+        linkDistance += 10;
+        simulation.force("link").distance(linkDistance);
+        simulation.alpha(1).restart();
+    } else if (e.key === "ArrowDown") {
+        linkDistance = Math.max(10, linkDistance - 10);
+        simulation.force("link").distance(linkDistance);
+        simulation.alpha(1).restart();
+    }
+});
