@@ -23,16 +23,49 @@ const arc = d3.arc()
 const svg = d3.select("svg")
     .attr("width", width)
     .attr("height", availableHeight)
-    .attr("viewBox", [-width/2, -availableHeight/2, width, availableHeight])  // Center the viewBox based on availableHeight
+    .attr("viewBox", [-width/2, -availableHeight/2, width, availableHeight])
     .style("font", "10px sans-serif");
+
+// gをズーム対象として一度だけ追加
+const g = svg.append("g");
+
+// --- ここからズーム処理を追加 ---
+const zoom = d3.zoom()
+    .scaleExtent([0.5, 5])
+    .on("zoom", (event) => {
+        g.attr("transform", event.transform);
+    });
+
+svg.call(zoom);
+
+let currentTransform = d3.zoomIdentity;
+
+svg.on("zoom", (event) => {
+    currentTransform = event.transform;
+});
+
+document.addEventListener("keydown", (e) => {
+    let scale = currentTransform.k;
+    if (e.key === "+" || e.key === "=" || e.key === "ArrowUp") {
+        scale = Math.min(scale * 1.2, 5);
+    } else if (e.key === "-" || e.key === "_" || e.key === "ArrowDown") {
+        scale = Math.max(scale / 1.2, 0.5);
+    } else {
+        return;
+    }
+    const newTransform = d3.zoomIdentity
+        .translate(currentTransform.x, currentTransform.y)
+        .scale(scale);
+    svg.transition().duration(200).call(zoom.transform, newTransform);
+    currentTransform = newTransform;
+});
+// --- ここまでズーム処理を追加 ---
 
 // データを読み込んでSunburstを表示
 fetch('data.json')
     .then(response => response.json())
     .then(data => {
         const root = partition(formatData(data));
-        
-        // Initialize the root's current property
         root.each(d => d.current = {
             x0: d.x0,
             x1: d.x1,
@@ -40,9 +73,8 @@ fetch('data.json')
             y1: d.y1
         });
 
-        svg.selectAll('*').remove();
-
-        const g = svg.append("g");
+        // gの中身だけ消す
+        g.selectAll("*").remove();
 
         const path = g.append("g")
             .selectAll("path")
