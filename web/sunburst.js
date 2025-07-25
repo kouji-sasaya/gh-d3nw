@@ -10,7 +10,10 @@ const navbar = document.querySelector('.navbar');
 const navHeight = navbar ? navbar.clientHeight : 0;
 const availableHeight = height - navHeight;
 const radius = availableHeight * 0.17;  // Reduced further from 0.35 to 0.30 for vertical fit
-const domainColorScale = d3.scaleOrdinal(d3.schemeCategory10); // new scale for domain-specific colors
+// グラデーションで円周を回る色スケール
+const color = d3.scaleSequential()
+    .domain([0, 2 * Math.PI])
+    .interpolator(d3.interpolateRainbow);
 
 const arc = d3.arc()
     .startAngle(d => d.x0)
@@ -34,6 +37,13 @@ const zoom = d3.zoom()
     .scaleExtent([0.5, 5])
     .on("zoom", (event) => {
         g.attr("transform", event.transform);
+
+        const scale = event.transform.k;
+        // すべてのtext要素に対してfont-size, fill-opacity, transformを更新
+        g.selectAll("text")
+            .style("font-size", `${12 / scale}px`)
+            .attr("fill-opacity", d => d ? +labelVisible(d.current || d) : 0)
+            .attr("transform", d => d ? labelTransform(d.current || d) : null);
     });
 
 svg.call(zoom);
@@ -80,16 +90,7 @@ fetch('data.json')
             .selectAll("path")
             .data(root.descendants().slice(1))
             .join("path")
-            .attr("fill", d => {
-                const ancestors = d.ancestors();
-                const domainAncestor = ancestors.find(a => a.data.type === "domain");
-                if (domainAncestor) {
-                    return domainColorScale(domainAncestor.data.name);
-                }
-                let node = d;
-                while (node.depth > 1) node = node.parent;
-                return color(node.data.name);
-            })
+            .attr("fill", d => color((d.x0 + d.x1) / 2))
             .attr("fill-opacity", d => arcVisible(d.current) ? (d.children ? 0.6 : 0.4) : 0)
             .attr("pointer-events", d => arcVisible(d.current) ? "auto" : "none")
             .attr("d", d => arc(d.current));
@@ -101,7 +102,8 @@ fetch('data.json')
         path.append("title")
             .text(d => `${d.ancestors().map(d => d.data.name).reverse().join("/")}`);
 
-        const label = g.append("g")
+        // ラベルgをグローバル変数に
+        label = g.append("g")
             .attr("pointer-events", "none")
             .attr("text-anchor", "middle")
             .style("user-select", "none")
@@ -218,14 +220,18 @@ const partition = data => {
         (root);
 };
 
-const color = d3.scaleOrdinal(d3.quantize(d3.interpolateRainbow, 8));
-
 function arcVisible(d) {
     return d.y1 <= 3 && d.y0 >= 1 && d.x1 > d.x0;
 }
 
 function labelVisible(d) {
-    return d.y1 <= 3 && d.y0 >= 1 && (d.y1 - d.y0) * (d.x1 - d.x0) > 0.03;
+    const node = d.current || d;
+    if (currentTransform.k >= 3) return true;
+    if (currentTransform.k >= 2) {
+        return node.y1 <= 3 && node.y0 >= 1 && (node.y1 - node.y0) * (node.x1 - node.x0) > 0.001;
+    }
+    const threshold = 0.03 / currentTransform.k;
+    return node.y1 <= 3 && node.y0 >= 1 && (node.y1 - node.y0) * (node.x1 - node.x0) > threshold;
 }
 
 function labelTransform(d) {
