@@ -15,13 +15,13 @@
         <div class="collapse navbar-collapse">
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             <li class="nav-item">
+              <a class="nav-link" href="#" id="menu-table">Table</a>
+            </li>
+            <li class="nav-item">
               <a class="nav-link active" href="#" id="menu-sunburst">Sunburst</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#" id="menu-main">Main</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#" id="menu-table">Table</a>
+              <a class="nav-link" href="#" id="menu-main">Network</a>
             </li>
           </ul>
         </div>
@@ -53,8 +53,22 @@
           });
       }
 
-      // 初期表示は sunburst.js
-      loadScript('sunburst.js');
+      // Table表示用の関数
+      function showTable() {
+        document.querySelector("#canvas").innerHTML = "<div id='table-container'></div>";
+        document.querySelectorAll('script[data-tablejs]').forEach(s => s.parentNode.removeChild(s));
+        setTimeout(function() {
+          const script = document.createElement('script');
+          script.src = 'table.js?v=' + Date.now();
+          script.type = 'text/javascript';
+          script.setAttribute('data-tablejs', 'true');
+          document.body.appendChild(script);
+        }, 10);
+        setActiveMenu(document.getElementById('menu-table'));
+      }
+
+      // 初期表示は Table
+      showTable();
 
       // メニュークリックで切り替え
       document.getElementById('menu-sunburst').addEventListener('click', function(e) {
@@ -64,13 +78,12 @@
       });
       document.getElementById('menu-main').addEventListener('click', function(e) {
         e.preventDefault();
-        loadScript('main.js');
+        loadScript('network.js');
         setActiveMenu(this);
       });
       document.getElementById('menu-table').addEventListener('click', function(e) {
         e.preventDefault();
-        loadScript('table.js');
-        setActiveMenu(this);
+        showTable();
       });
 
       // アクティブメニューの切り替え
