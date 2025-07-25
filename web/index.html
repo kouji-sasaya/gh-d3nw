@@ -8,6 +8,26 @@
     <link rel="stylesheet" href="style.css">
   </head>
   <body>
+    <!-- メニューバー -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">Visualization</a>
+        <div class="collapse navbar-collapse">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link active" href="#" id="menu-sunburst">Sunburst</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#" id="menu-main">Main</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#" id="menu-table">Table</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+    <!-- ここから下は既存のcanvasなど -->
     <div id="canvas">
       <svg></svg>
     </div>
@@ -16,17 +36,48 @@
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
     <script>
-      // キャッシュ対策で毎回異なるクエリを付与
-      const cacheBuster = Date.now();
-      fetch('sunburst.js?v=' + cacheBuster)
-        .then(response => response.text())
-        .then(scriptContent => {
-          const executeScript = new Function(scriptContent);
-          executeScript();
-        })
-        .catch(error => {
-          console.error('Error loading sunburst.js:', error);
-        });
+      // JSファイルを動的に読み込む関数
+      function loadScript(jsFile) {
+        // 既存のSVGやcanvas内容をクリア
+        document.querySelector("#canvas").innerHTML = "<svg></svg>";
+        // キャッシュ対策で毎回異なるクエリを付与
+        const cacheBuster = Date.now();
+        fetch(jsFile + '?v=' + cacheBuster)
+          .then(response => response.text())
+          .then(scriptContent => {
+            const executeScript = new Function(scriptContent);
+            executeScript();
+          })
+          .catch(error => {
+            console.error('Error loading ' + jsFile + ':', error);
+          });
+      }
+
+      // 初期表示は sunburst.js
+      loadScript('sunburst.js');
+
+      // メニュークリックで切り替え
+      document.getElementById('menu-sunburst').addEventListener('click', function(e) {
+        e.preventDefault();
+        loadScript('sunburst.js');
+        setActiveMenu(this);
+      });
+      document.getElementById('menu-main').addEventListener('click', function(e) {
+        e.preventDefault();
+        loadScript('main.js');
+        setActiveMenu(this);
+      });
+      document.getElementById('menu-table').addEventListener('click', function(e) {
+        e.preventDefault();
+        loadScript('table.js');
+        setActiveMenu(this);
+      });
+
+      // アクティブメニューの切り替え
+      function setActiveMenu(activeElem) {
+        document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+        activeElem.classList.add('active');
+      }
     </script>
   </body>
 </html>
