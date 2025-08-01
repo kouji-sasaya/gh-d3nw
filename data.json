@@ -1023,9 +1023,5 @@
     { "id": "U0998", "address": "", "name": "Eagle Metal", "type": "user", "links": ["P0002", "D0007"]   },
     { "id": "U0999", "address": "", "name": "Zebra Salsa", "type": "user", "links": ["P0001", "D0008"]   },
     { "id": "U1000", "address": "", "name": "Zebra Salsa", "type": "user", "links": ["P0002", "D0009"]   }
-  ],
-  "config": { "version": "1.0", "lastUpdated": "2023-11-15", "types": {
-  "project": { "size": 100, "color": "#4285F4" },
-  "domain": { "size": 70, "color": "#DB4437" },
-  "service": { "size": 40, "color": "#F4B400" },
-  "user": { "size": 20, "color": "#0F9D58" } } } }
+  ]
+}
