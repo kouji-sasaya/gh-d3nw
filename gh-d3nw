@@ -40,7 +40,7 @@ if [ "$1" = "install" ]; then
     rm -f docs/data.json
   fi
   if [ ! -f config.json ]; then
-    cp ${TOP}/config.json .
+    cp ${TOP}/docs/config.json .
     rm -f docs/config.json
   fi
   # If not exist .env

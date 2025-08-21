@@ -101,28 +101,13 @@ let simulation = null;
 Promise.all([
   fetch('data.json').then(res => res.json()),
   fetch('config.json').then(res => res.json())
-]).then(([data, configData]) => {
+]).then(([nodes, configData]) => {
     const config = configData.config;
-    const nodes = data.nodes;
+    // nodesは配列として直接利用
     const links = [];
 
-    // チェックボックスの作成
-    Object.keys(config.types).forEach(type => {
-        const label = checkboxContainer.append("label")
-            .style("margin-bottom", "5px");
-
-        label.append("input")
-            .attr("type", "checkbox")
-            .attr("class", "filter-checkbox")
-            .attr("data-group", type)
-            .property("checked", true);
-
-        label.append("span")
-            .text(typeLabels[type]);
-    });
-
     nodes.forEach(node => {
-        if (node.links) {
+        if (node.links && node.links.length > 0) {
             node.links.forEach(targetId => {
                 links.push({
                     source: node.id,

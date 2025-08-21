@@ -1,5 +1,5 @@
 (function() {
-    function createDataTable(data) {
+    function createDataTable(nodes) { // ← 引数名を nodes に変更
         const innerTableContainer = document.createElement('div');
         innerTableContainer.className = 'container mt-4';
 
@@ -24,7 +24,7 @@
         const table = document.createElement('table');
         table.className = 'table table-striped table-hover';
 
-        // ヘッダー作成を修正 (追加: "Address")
+        // ヘッダー作成
         const thead = document.createElement('thead');
         thead.className = 'table-dark';
         const headerRow = thead.insertRow();
@@ -33,7 +33,7 @@
             const th = document.createElement('th');
             th.style.cursor = 'pointer';
             th.innerHTML = `${headerText} <span class="sort-indicator" style="margin-left:5px;opacity:0.3">⇅</span>`;
-            th.addEventListener('click', () => sortTable(th, headerText, tbody, data.nodes));
+            th.addEventListener('click', () => sortTable(th, headerText, tbody, nodes)); // ← nodes に変更
             headerRow.appendChild(th);
         });
         
@@ -41,9 +41,9 @@
         const tbody = document.createElement('tbody');
         table.appendChild(tbody);
 
-        // New function to render the table body based on currentFilter and sort state.
+        // テーブル更新関数
         function updateTable() {
-            let filteredNodes = data.nodes.filter(n => currentFilter === 'all' ? true : n.type === currentFilter);
+            let filteredNodes = nodes.filter(n => currentFilter === 'all' ? true : n.type === currentFilter); // ← nodes に変更
             if (currentSortColumn) {
                 filteredNodes.sort((a, b) => {
                     let valueA, valueB;
@@ -83,7 +83,7 @@
                     <td>${node.name}</td>
                     <td>${node.address || '-'}</td>
                     <td><span class="badge bg-${getTypeColor(node.type)}">${node.type}</span></td>
-                    <td>${node.links.join(', ') || '-'}</td>
+                    <td>${node.links ? node.links.join(', ') : '-'}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -150,21 +150,19 @@
         fetch('data.json')
             .then(response => response.json())
             .then(data => {
-                const tableElement = createDataTable(data);
+                const tableElement = createDataTable(data); // ← data（nodes配列）を直接渡す
                 tableContainer.node().appendChild(tableElement);
             })
             .catch(error => {
                 console.error('Error loading data:', error);
                 // エラー時はサンプルデータを表示
-                const sampleData = {
-                    nodes: [
-                        { id: 1, name: "Project A", address: "123 Main St", type: "project", links: ["2", "3"] },
-                        { id: 2, name: "domain B", address: "456 Elm St", type: "domain", links: ["1"] },
-                        { id: 3, name: "Service C", address: "789 Oak St", type: "service", links: ["1"] },
-                        { id: 4, name: "User D", address: "101 Pine St", type: "user", links: ["2"] }
-                    ]
-                };
-                const tableElement = createDataTable(sampleData);
+                const sampleData = [
+                    { id: 1, name: "Project A", address: "123 Main St", type: "project", links: ["2", "3"] },
+                    { id: 2, name: "domain B", address: "456 Elm St", type: "domain", links: ["1"] },
+                    { id: 3, name: "Service C", address: "789 Oak St", type: "service", links: ["1"] },
+                    { id: 4, name: "User D", address: "101 Pine St", type: "user", links: ["2"] }
+                ];
+                const tableElement = createDataTable(sampleData); // ← サンプルも配列で渡す
                 tableContainer.node().appendChild(tableElement);
             });
     }

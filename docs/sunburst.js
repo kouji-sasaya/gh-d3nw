@@ -75,6 +75,8 @@ document.addEventListener("keydown", (e) => {
 fetch('data.json')
     .then(response => response.json())
     .then(data => {
+        // --- ここを修正 ---
+        // data.nodes → data に変更
         const root = partition(formatData(data));
         root.each(d => d.current = {
             x0: d.x0,
@@ -160,8 +162,9 @@ function formatData(data) {
         children: []
     };
 
-    // プロジェクトノードの作成
-    const projectNodes = data.nodes.filter(n => n.type === "project");
+    // --- ここを修正 ---
+    // data.nodes → data に変更
+    const projectNodes = data.filter(n => n.type === "project");
     projectNodes.forEach(project => {
         const projectNode = {
             name: project.name,
@@ -169,9 +172,9 @@ function formatData(data) {
         };
 
         // プロジェクトに関連するドメインを追加
-        const domains = data.nodes.filter(n => 
+        const domains = data.filter(n => 
             n.type === "domain" && 
-            data.nodes.some(e => 
+            data.some(e => 
                 e.type === "user" && 
                 e.links.includes(project.id) && 
                 e.links.includes(n.id)
@@ -181,12 +184,12 @@ function formatData(data) {
         domains.forEach(domain => {
             const domainNode = {
                 name: domain.name,
-                type: "domain", // mark domain nodes
+                type: "domain",
                 children: []
             };
 
             // 会社に所属するユーザーを追加
-            const users = data.nodes.filter(n => 
+            const users = data.filter(n => 
                 n.type === "user" && 
                 n.links.includes(domain.id) && 
                 n.links.includes(project.id)
