@@ -30,6 +30,10 @@ if [ "$1" = "shell" ]; then
 fi
 
 if [ "$1" = "install" ]; then
+  # If not exist docs
+  if [ ! -d docs ]; then
+    cp -rf ${TOP}/docs .
+  fi
   # If not exist data.json
   if [ ! -f data.json ]; then
     cp ${TOP}/data.json .
@@ -42,16 +46,16 @@ if [ "$1" = "install" ]; then
     touch .env
   fi
   # Install service logo
-  wget -nv https://upload.wikimedia.org/wikipedia/commons/8/8a/Jira_Logo.svg -O $TOP/web/jira.svg
-  wget -nv https://upload.wikimedia.org/wikipedia/commons/8/88/Atlassian_Confluence_2017_logo.svg -O $TOP/web/confluence.svg
-  wget -nw https://upload.wikimedia.org/wikipedia/commons/3/35/GitLab_icon.svg -O $TOP/web/gitlab.svg
-  wget -nv https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg -O $TOP/web/github.svg
-  wget -nv https://upload.wikimedia.org/wikipedia/commons/b/b9/Slack_Technologies_Logo.svg -O $TOP/web/slack.svg
-  wget -nv https://upload.wikimedia.org/wikipedia/commons/1/12/Rocket.Chat_Logo.svg -O $TOP/rocketchat.svg
-  wget -nv https://upload.wikimedia.org/wikipedia/commons/b/b8/YouTube_Logo_2017.svg -O $TOP/youtube.svg
-  wget -nv https://upload.wikimedia.org/wikipedia/commons/9/95/Instagram_logo_2022.svg -O $TOP/instagram.svg
-  wget -nv https://upload.wikimedia.org/wikipedia/commons/c/ce/X_logo_2023.svg -O $TOP/x.svg
-  wget -nv https://upload.wikimedia.org/wikipedia/commons/3/3b/Grafana_icon.svg -O $TOP/grafana.svg
+  wget -nv https://upload.wikimedia.org/wikipedia/commons/8/8a/Jira_Logo.svg -O ./docs/jira.svg
+  wget -nv https://upload.wikimedia.org/wikipedia/commons/8/88/Atlassian_Confluence_2017_logo.svg -O ./docs/confluence.svg
+  wget -nv https://upload.wikimedia.org/wikipedia/commons/3/35/GitLab_icon.svg -O ./docs/gitlab.svg
+  wget -nv https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg -O ./docs/github.svg
+  wget -nv https://upload.wikimedia.org/wikipedia/commons/b/b9/Slack_Technologies_Logo.svg -O ./docs/slack.svg
+  wget -nv https://upload.wikimedia.org/wikipedia/commons/1/12/Rocket.Chat_Logo.svg -O ./docs/rocketchat.svg
+  wget -nv https://upload.wikimedia.org/wikipedia/commons/b/b8/YouTube_Logo_2017.svg -O ./docs/youtube.svg
+  wget -nv https://upload.wikimedia.org/wikipedia/commons/9/95/Instagram_logo_2022.svg -O ./docs/instagram.svg
+  wget -nv https://upload.wikimedia.org/wikipedia/commons/c/ce/X_logo_2023.svg -O ./docs/x.svg
+  wget -nv https://upload.wikimedia.org/wikipedia/commons/3/3b/Grafana_icon.svg -O ./docs/grafana.svg
   exit 0
 fi
 
