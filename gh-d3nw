@@ -36,10 +36,12 @@ if [ "$1" = "install" ]; then
   fi
   # If not exist data.json
   if [ ! -f data.json ]; then
-    cp ${TOP}/data.json .
+    cp ${TOP}/docs/data.json .
+    rm -f docs/data.json
   fi
   if [ ! -f config.json ]; then
     cp ${TOP}/config.json .
+    rm -f docs/config.json
   fi
   # If not exist .env
   if [ ! -f .env ]; then
