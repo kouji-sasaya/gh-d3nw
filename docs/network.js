@@ -118,42 +118,76 @@ Promise.all([
     });
 
     // シミュレーション作成
+    // link distance をノード種別に応じて調整、user ノードには大きめに
+    const linkForce = d3.forceLink(links)
+        .id(d => d.id)
+        .distance(function(d) {
+            // d.source / d.target がオブジェクトになっている可能性があるため両方を扱う
+            const getType = x => (typeof x === 'object' && x.type) ? x.type : (nodes.find(n => n.id == x) || {}).type;
+            const sType = getType(d.source);
+            const tType = getType(d.target);
+            const base = linkDistance;
+            // ユーザが絡むリンクは余裕を持たせる（重なり軽減）
+            if (sType === 'user' || tType === 'user') return base + 80;
+            // サービス間は近めに（任意）
+            if (sType === 'service' && tType === 'service') return Math.max(40, base - 40);
+            return base;
+        });
+
+    // charge をノード種別に応じて変える（ユーザを強く反発させる）
+    const chargeForce = d3.forceManyBody().strength(d => {
+        if (d.type === 'user') return -120;
+        if (d.type === 'service') return -60;
+        return -40;
+    });
+
+    // collision 半径にラベル幅分の余白を加える（長い名前を考慮）
+    const collisionForce = d3.forceCollide().radius(d => {
+        const baseRadius = (config && config.types && config.types[d.type])
+            ? (config.types[d.type].size / 4)
+            : 10;
+        const nameLen = String(d.name || '').length;
+        const labelPadding = (d.type === 'user') ? 12 : 6;
+        // 名前長に応じた追加（最大 24px 程度）
+        const nameExtra = Math.min(24, nameLen * 1.5);
+        return baseRadius + labelPadding + nameExtra;
+    }).iterations(2);
+
     simulation = d3.forceSimulation(nodes)
-        .force("link", d3.forceLink(links).id(d => d.id).distance(linkDistance))
-        .force("charge", d3.forceManyBody().strength(-30))
+        .force("link", linkForce)
+        .force("charge", chargeForce)
         .force("x", d3.forceX())
         .force("y", d3.forceY())
-        .force("collision", d3.forceCollide().radius(d => {
-            return config.types[d.type].size / 10 + 5;
-        }));
-
+        .force("collision", collisionForce);
+ 
     const link = container.append("g")
-        .attr("stroke", "#999")
-        .attr("stroke-opacity", 0.6)
-        .selectAll("line")
-        .data(links)
-        .join("line")
-        .attr("stroke-width", 1.5);
-
-    const node = container.append("g")
-        .attr("stroke", "#fff")
-        .attr("stroke-width", 1.5)
-        .selectAll("g")
-        .data(nodes)
-        .join("g")
-        .call(d3.drag()
-            .on("start", dragstarted)
-            .on("drag", dragged)
-            .on("end", dragended));
-
-    node.append("circle")
-        .attr("r", d => config.types[d.type].size / 4)
-        .attr("fill", d => config.types[d.type].color);
-
+         .attr("stroke", "#999")
+         .attr("stroke-opacity", 0.6)
+         .selectAll("line")
+         .data(links)
+         .join("line")
+         .attr("stroke-width", 1.5);
+ 
+     const node = container.append("g")
+         .attr("stroke", "#fff")
+         .attr("stroke-width", 1.5)
+         .selectAll("g")
+         .data(nodes)
+         .join("g")
+         .call(d3.drag()
+             .on("start", dragstarted)
+             .on("drag", dragged)
+             .on("end", dragended));
+ 
+     node.append("circle")
+         .attr("r", d => config.types[d.type].size / 4)
+         .attr("fill", d => config.types[d.type].color);
+ 
+    // ラベルはユーザだけノード外に置く（左寄せ）して重なりを軽減、フォントは小さめに
     node.append("g")
       .each(function(d) {
           if (d.type === "service") {
-              if (d.name.toLowerCase() === "github") {
+              if (d.name && d.name.toLowerCase() === "github") {
                   d3.select(this).append("image")
                       .attr("xlink:href", "github.svg")
                       .attr("width", config.types[d.type].size / 2)
@@ -170,6 +204,22 @@ Promise.all([
                       .attr("fill", "black")
                       .attr("stroke", "none");
               }
+          } else if (d.type === "user") {
+              // ユーザはラベルを右側にオフセットしフォントを小さくする
+              const r = (config.types[d.type].size / 4) || 8;
+              d3.select(this).append("text")
+                  .text(d => {
+                      const s = String(d.name || '');
+                      // 必要なら切り詰め（例: 18 文字）
+                      return s.length > 18 ? s.slice(0, 16) + '…' : s;
+                  })
+                  .attr("text-anchor", "start")
+                  .attr("dx", r + 8)
+                  .attr("dy", ".35em")
+                  .attr("font-size", "9px")
+                  .attr("font-family", "Arial, sans-serif")
+                  .attr("fill", "black")
+                  .attr("stroke", "none");
           } else {
               d3.select(this).append("text")
                   .text(d => d.name)
@@ -181,20 +231,20 @@ Promise.all([
                   .attr("stroke", "none");
           }
       });
-
-    node.append("title")
-        .text(d => d.name);
-
-    simulation.on("tick", () => {
-        link
-            .attr("x1", d => d.source.x)
-            .attr("y1", d => d.source.y)
-            .attr("x2", d => d.target.x)
-            .attr("y2", d => d.target.y);
-
-        node
-            .attr("transform", d => `translate(${d.x},${d.y})`);
-    });
+ 
+     node.append("title")
+         .text(d => d.name);
+ 
+     simulation.on("tick", () => {
+         link
+             .attr("x1", d => d.source.x)
+             .attr("y1", d => d.source.y)
+             .attr("x2", d => d.target.x)
+             .attr("y2", d => d.target.y);
+ 
+         node
+             .attr("transform", d => `translate(${d.x},${d.y})`);
+     });
 
     const checkboxes = d3.selectAll(".filter-checkbox");
     checkboxes.on("change", function() {
