@@ -142,3 +142,37 @@ svg {
 #datatable-container thead tr.filters th {
   padding: 6px 8px;
 }
+
+/* Ensure DataTables top controls (length, buttons, filter) are visible and laid out */
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dt-buttons,
+.dataTables_wrapper .dataTables_filter {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 6px 8px;
+}
+
+.dataTables_wrapper .dataTables_length {
+  float: left;
+}
+
+.dataTables_wrapper .dt-buttons {
+  float: left;
+}
+
+.dataTables_wrapper .dataTables_filter {
+  float: right;
+  margin-right: 12px;
+}
+
+/* Clear floats in the wrapper header area so the table content doesn't overlap */
+.dataTables_wrapper .dt-top {
+  clear: both;
+}
+
+/* Ensure wrapper header area has enough space */
+.dataTables_wrapper .dt-top,
+.dataTables_wrapper .dt-bottom {
+  box-sizing: border-box;
+  padding: 6px 8px;
+}

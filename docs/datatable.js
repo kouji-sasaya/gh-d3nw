@@ -46,20 +46,27 @@
 
             // If DataTables not available, fallback to simple full-size table with rows-per-page control and per-column filters
             if (typeof $ === 'undefined' || !$.fn || !$.fn.dataTable) {
-                // create a simple rows-per-page selector, filters row and table container
+                // create a simple rows-per-page selector, export buttons, filters row and table container
                 const optionsHTML = `
-                    <div style="padding:8px 12px;border-bottom:1px solid #eee;background:#fff;display:flex;align-items:center;gap:16px;">
-                      <label style="font-size:14px;color:#333;">
-                        表示件数：
-                        <select id="rows-per-page">
-                          <option value="10">10</option>
-                          <option value="25">25</option>
-                          <option value="50">50</option>
-                          <option value="100">100</option>
-                          <option value="-1">All</option>
-                        </select>
-                      </label>
-                      <div style="flex:1"></div>
+                    <div style="padding:8px 12px;border-bottom:1px solid #eee;background:#fff;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                      <div style="display:flex;align-items:center;gap:8px;">
+                        <label style="font-size:14px;color:#333;">
+                          表示件数：
+                          <select id="rows-per-page">
+                            <option value="10">10</option>
+                            <option value="25" selected>25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                            <option value="-1">All</option>
+                          </select>
+                        </label>
+                      </div>
+                      <div id="plain-export-buttons" style="display:flex;gap:8px;margin-left:auto;">
+                        <button id="btn-copy" type="button">Copy</button>
+                        <button id="btn-csv" type="button">CSV</button>
+                        <button id="btn-json" type="button">JSON</button>
+                        <button id="btn-excel" type="button">Excel</button>
+                      </div>
                     </div>
                     <div id="plain-filters" style="padding:8px 12px;border-bottom:1px solid #eee;background:#fff;display:flex;gap:8px;flex-wrap:wrap;"></div>
                     <div id="plain-table-wrapper" style="overflow:auto;flex:1;padding:0 12px;"></div>
@@ -108,8 +115,8 @@
                     wrapper.innerHTML = html;
                 }
 
-                // initial render with default 10
-                renderRows(10);
+                // initial render with default 25
+                renderRows(25);
 
                 // attach rows-per-page event
                 const sel = document.getElementById('rows-per-page');
@@ -128,6 +135,71 @@
                     });
                 });
 
+                // --- Fallback export utilities (CSV with BOM, JSON, Excel-ish, Copy) ---
+                function downloadBlob(filename, blob) {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                }
+
+                function getFilteredRows() {
+                    return applyPlainFilters(dataArray.slice());
+                }
+
+                function exportCSV(rows) {
+                    if (!rows.length) return;
+                    const header = keys.join(',');
+                    const lines = rows.map(r => keys.map(k => {
+                        const v = r[k];
+                        if (v === null || v === undefined) return '';
+                        const s = Array.isArray(v) ? v.join(' ') : String(v);
+                        // escape quotes
+                        return '"' + s.replace(/"/g, '""') + '"';
+                    }).join(',')).join('\r\n');
+                    const bom = '\uFEFF';
+                    const csv = bom + header + '\r\n' + lines;
+                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                    downloadBlob('data.csv', blob);
+                }
+
+                function exportJSON(rows) {
+                    const blob = new Blob([JSON.stringify(rows, null, 2)], { type: 'application/json;charset=utf-8' });
+                    downloadBlob('data.json', blob);
+                }
+
+                function exportExcel(rows) {
+                    // simple Excel-ish export via HTML table blob (works in Excel, preserves UTF-8 BOM)
+                    let html = '<table><thead><tr>' + keys.map(k => `<th>${k}</th>`).join('') + '</tr></thead><tbody>';
+                    rows.forEach(r => {
+                        html += '<tr>' + keys.map(k => `<td>${Array.isArray(r[k])?r[k].join(' '):(r[k]??'')}</td>`).join('') + '</tr>';
+                    });
+                    html += '</tbody></table>';
+                    const bom = '\uFEFF';
+                    const blob = new Blob([bom + html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+                    downloadBlob('data.xls', blob);
+                }
+
+                function copyToClipboard(rows) {
+                    const header = keys.join('\t');
+                    const text = header + '\n' + rows.map(r => keys.map(k => Array.isArray(r[k])?r[k].join(' '):(r[k]??'')).join('\t')).join('\n');
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(text).catch(()=> { prompt('Copy the following text:', text); });
+                    } else {
+                        prompt('Copy the following text:', text);
+                    }
+                }
+
+                // wire buttons
+                document.getElementById('btn-csv').addEventListener('click', () => exportCSV(getFilteredRows()));
+                document.getElementById('btn-json').addEventListener('click', () => exportJSON(getFilteredRows()));
+                document.getElementById('btn-excel').addEventListener('click', () => exportExcel(getFilteredRows()));
+                document.getElementById('btn-copy').addEventListener('click', () => copyToClipboard(getFilteredRows()));
+
                 return;
             }
 
@@ -135,7 +207,29 @@
             const baseOptions = {
                 data: dataArray,
                 columns: columns,
-                pageLength: 10,
+                pageLength: 25,
+                dom: 'lBfrtip', // include length (表示件数) control
+                buttons: [
+                  { extend: 'copyHtml5', text: 'Copy', exportOptions: { columns: ':visible' } },
+                  { extend: 'csvHtml5', text: 'CSV', bom: true, charset: 'utf-8', filename: 'data', exportOptions: { columns: ':visible' } },
+                  { extend: 'excelHtml5', text: 'Excel', filename: 'data', exportOptions: { columns: ':visible' } },
+                  // custom JSON button
+                  {
+                    text: 'JSON',
+                    action: function (e, dt, node, config) {
+                      const rows = dt.rows({ search: 'applied' }).data().toArray();
+                      const blob = new Blob([JSON.stringify(rows, null, 2)], { type: 'application/json;charset=utf-8' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = 'data.json';
+                      document.body.appendChild(a);
+                      a.click();
+                      a.remove();
+                      URL.revokeObjectURL(url);
+                    }
+                  }
+                ],
                 lengthChange: true, // allow user to change number of entries shown
                 lengthMenu: [[10,25,50,100,-1],[10,25,50,100,'All']], // options shown to the user
                 searching: true,
@@ -174,14 +268,15 @@
                     initComplete: function() {
                         // Column-wise filtering: wire inputs to column search
                         const api = this.api();
-                        api.columns().every(function() {
-                            const column = this;
-                            const colIdx = column.index();
-                            const input = $($('#dt thead tr.filters th').get(colIdx)).find('input');
-                            input.on('input', function() {
+                        // Attach handlers to the THEAD inside the DataTable container so it works with
+                        // DataTables' header cloning when scrollX/scrollY is enabled.
+                        const container = $(api.table().container());
+                        container.find('thead tr.filters th').each(function(idx) {
+                            const input = $(this).find('input');
+                            input.off('.dtFilter').on('input.dtFilter', function() {
                                 const val = this.value;
-                                if (column.search() !== val) {
-                                    column.search(val).draw();
+                                if (api.column(idx).search() !== val) {
+                                    api.column(idx).search(val).draw();
                                 }
                             });
                         });
