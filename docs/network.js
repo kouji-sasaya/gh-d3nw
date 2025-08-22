@@ -78,38 +78,52 @@ const container = svg.append("g");
 // コンテナのトランスフォーム初期化
 container.attr("transform", "translate(0,0) scale(1)");
 
-// チェックボックスコンテナの作成
-const checkboxContainer = d3.select("body")
-  .append("div")
-  .attr("class", "type-checkbox-container")
-  .style("display", "flex")
-  .style("flex-direction", "column");
-
-// 型名の表示マッピング
-const typeLabels = {
-  'project': 'Projects',
-  'domain': 'Domains',
-  'service': 'Services',
-  'user': 'Users'
-};
+// チェックボックスコンテナ（ツールチップ風）を作る場所を reserve
+let typeTooltip = document.getElementById('network-type-tooltip');
+if (!typeTooltip) {
+  typeTooltip = document.createElement('div');
+  typeTooltip.id = 'network-type-tooltip';
+  typeTooltip.style.position = 'fixed';
+  typeTooltip.style.top = '80px';
+  typeTooltip.style.right = '12px';
+  typeTooltip.style.padding = '8px';
+  typeTooltip.style.background = 'rgba(255,255,255,0.95)';
+  typeTooltip.style.border = '1px solid rgba(0,0,0,0.08)';
+  typeTooltip.style.borderRadius = '6px';
+  typeTooltip.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+  typeTooltip.style.zIndex = 9999;
+  typeTooltip.style.fontSize = '13px';
+  typeTooltip.style.display = 'none'; // 最初は非表示（後で表示）
+  document.body.appendChild(typeTooltip);
+}
 
 // グローバルで管理
 let linkDistance = 150;
 let simulation = null;
+let fullNodes = [];
+let fullLinks = [];
+let linkSelection = null;
+let nodeSelection = null;
+let linkGroup = null;
+let nodeGroup = null;
+let visibleTypes = new Set(); // 現在表示する type の集合
 
 // データと設定を同時に取得
 Promise.all([
   fetch('data.json').then(res => res.json()),
   fetch('config.json').then(res => res.json())
-]).then(([nodes, configData]) => {
+]).then(([nodesData, configData]) => {
     const config = configData.config;
-    // nodesは配列として直接利用
-    const links = [];
-
-    nodes.forEach(node => {
+    // expose to window so other parts of the file that reference window.config work
+    try { window.config = config; } catch (e) { /* noop in strict contexts */ }
+    // nodesDataは配列として直接利用
+    fullNodes = Array.isArray(nodesData) ? nodesData : (Array.isArray(nodesData.nodes) ? nodesData.nodes : []);
+    // build fullLinks from nodes' links array (keep as id strings)
+    fullLinks = [];
+    fullNodes.forEach(node => {
         if (node.links && node.links.length > 0) {
             node.links.forEach(targetId => {
-                links.push({
+                fullLinks.push({
                     source: node.id,
                     target: targetId
                 });
@@ -117,351 +131,335 @@ Promise.all([
         }
     });
 
-    // シミュレーション作成
-    // link distance をノード種別に応じて調整、user ノードには大きめに
-    const linkForce = d3.forceLink(links)
-        .id(d => d.id)
-        .distance(function(d) {
-            // d.source / d.target がオブジェクトになっている可能性があるため両方を扱う
-            const getType = x => (typeof x === 'object' && x.type) ? x.type : (nodes.find(n => n.id == x) || {}).type;
-            const sType = getType(d.source);
-            const tType = getType(d.target);
-            const base = linkDistance;
-            // ユーザが絡むリンクは余裕を持たせる（重なり軽減）
-            if (sType === 'user' || tType === 'user') return base + 80;
-            // サービス間は近めに（任意）
-            if (sType === 'service' && tType === 'service') return Math.max(40, base - 40);
-            return base;
-        });
-
-    // charge をノード種別に応じて変える（ユーザを強く反発させる）
-    const chargeForce = d3.forceManyBody().strength(d => {
-        if (d.type === 'user') return -120;
-        if (d.type === 'service') return -60;
-        return -40;
-    });
-
-    // collision 半径にラベル幅分の余白を加える（長い名前を考慮）
-    const collisionForce = d3.forceCollide().radius(d => {
-        const baseRadius = (config && config.types && config.types[d.type])
-            ? (config.types[d.type].size / 4)
-            : 10;
-        const nameLen = String(d.name || '').length;
-        const labelPadding = (d.type === 'user') ? 12 : 6;
-        // 名前長に応じた追加（最大 24px 程度）
-        const nameExtra = Math.min(24, nameLen * 1.5);
-        return baseRadius + labelPadding + nameExtra;
-    }).iterations(2);
-
-    simulation = d3.forceSimulation(nodes)
-        .force("link", linkForce)
-        .force("charge", chargeForce)
-        .force("x", d3.forceX())
-        .force("y", d3.forceY())
-        .force("collision", collisionForce);
- 
-    const link = container.append("g")
-         .attr("stroke", "#999")
-         .attr("stroke-opacity", 0.6)
-         .selectAll("line")
-         .data(links)
-         .join("line")
-         .attr("stroke-width", 1.5);
- 
-     const node = container.append("g")
-         .attr("stroke", "#fff")
-         .attr("stroke-width", 1.5)
-         .selectAll("g")
-         .data(nodes)
-         .join("g")
-         .call(d3.drag()
-             .on("start", dragstarted)
-             .on("drag", dragged)
-             .on("end", dragended));
- 
-     node.append("circle")
-         .attr("r", d => config.types[d.type].size / 4)
-         .attr("fill", d => config.types[d.type].color);
- 
-    // ラベルはユーザだけノード外に置く（左寄せ）して重なりを軽減、フォントは小さめに
-    node.append("g")
-      .each(function(d) {
-          if (d.type === "service") {
-              if (d.name && d.name.toLowerCase() === "github") {
-                  d3.select(this).append("image")
-                      .attr("xlink:href", "github.svg")
-                      .attr("width", config.types[d.type].size / 2)
-                      .attr("height", config.types[d.type].size / 2)
-                      .attr("x", -config.types[d.type].size / 4)
-                      .attr("y", -config.types[d.type].size / 4);
-              } else {
-                  d3.select(this).append("text")
-                      .text(d => d.name)
-                      .attr("text-anchor", "middle")
-                      .attr("dy", ".35em")
-                      .attr("font-size", "10px")
-                      .attr("font-family", "Arial, sans-serif")
-                      .attr("fill", "black")
-                      .attr("stroke", "none");
-              }
-          } else if (d.type === "user") {
-              // ユーザはラベルを右側にオフセットしフォントを小さくする
-              const r = (config.types[d.type].size / 4) || 8;
-              d3.select(this).append("text")
-                  .text(d => {
-                      const s = String(d.name || '');
-                      // 必要なら切り詰め（例: 18 文字）
-                      return s.length > 18 ? s.slice(0, 16) + '…' : s;
-                  })
-                  .attr("text-anchor", "start")
-                  .attr("dx", r + 8)
-                  .attr("dy", ".35em")
-                  .attr("font-size", "9px")
-                  .attr("font-family", "Arial, sans-serif")
-                  .attr("fill", "black")
-                  .attr("stroke", "none");
-          } else {
-              d3.select(this).append("text")
-                  .text(d => d.name)
-                  .attr("text-anchor", "middle")
-                  .attr("dy", ".35em")
-                  .attr("font-size", "10px")
-                  .attr("font-family", "Arial, sans-serif")
-                  .attr("fill", "black")
-                  .attr("stroke", "none");
-          }
-      });
- 
-     node.append("title")
-         .text(d => d.name);
- 
-     simulation.on("tick", () => {
-         link
-             .attr("x1", d => d.source.x)
-             .attr("y1", d => d.source.y)
-             .attr("x2", d => d.target.x)
-             .attr("y2", d => d.target.y);
- 
-         node
-             .attr("transform", d => `translate(${d.x},${d.y})`);
-     });
-
-    const checkboxes = d3.selectAll(".filter-checkbox");
-    checkboxes.on("change", function() {
-        // アクティブな型を取得
-        const activeTypes = new Set(
-            Array.from(document.querySelectorAll('.filter-checkbox'))
-                .filter(cb => cb.checked)
-                .map(cb => cb.dataset.group)
-        );
-
-        // ノードの表示状態を更新
-        node.each(d => {
-            d.hidden = !activeTypes.has(d.type);
-        });
-
-        // リンクをフィルタリング
-        const filteredLinks = links.filter(link => {
-            const sourceNode = nodes.find(n => n.id === link.source.id || n.id === link.source);
-            const targetNode = nodes.find(n => n.id === link.target.id || n.id === link.target);
-            return !sourceNode.hidden && !targetNode.hidden;
-        });
-
-        // シミュレーションを更新
-        simulation.force("link").links(filteredLinks);
-        simulation.alpha(1).restart();
-
-        // ノードとリンクの表示を更新
-        node.style("display", d => d.hidden ? "none" : "block");
-        link.style("display", d => {
-            const sourceNode = nodes.find(n => n.id === d.source.id || n.id === d.source);
-            const targetNode = nodes.find(n => n.id === d.target.id || n.id === d.target);
-            return (!sourceNode.hidden && !targetNode.hidden) ? "block" : "none";
-        });
-    });
-
-    function dragstarted(event) {
-        if (!event.active) simulation.alphaTarget(0.3).restart();
-        event.subject.fx = event.subject.x;
-        event.subject.fy = event.subject.y;
+    // 初期 visibleTypes は config.types の全キー
+    visibleTypes = new Set(Object.keys((config && config.types) ? config.types : {}));
+    if (visibleTypes.size === 0) {
+      // フォールバック: データ中の type を採用
+      fullNodes.forEach(n => visibleTypes.add(n.type));
     }
 
-    function dragged(event) {
-        event.subject.fx = event.x;
-        event.subject.fy = event.y;
+    // UI: ツールチップ内に type チェックボックスを作成（config.json に従う）
+    createTypeTooltip(config);
 
-        link
-            .attr("stroke", d => (d.source.id === event.subject.id || d.target.id === event.subject.id ? "red" : "#999"))
-            .attr("stroke-width", d => (d.source.id === event.subject.id || d.target.id === event.subject.id ? 3 : 1.5));
-    }
-
-    function dragended(event) {
-        if (!event.active) simulation.alphaTarget(0);
-        event.subject.fx = event.subject.x;
-        event.subject.fy = event.subject.y;
-
-        link
-            .attr("stroke", "#999")
-            .attr("stroke-width", 1.5);
-    }
-
-    node.on("dblclick", (event, d) => {
-        d.fx = null;
-        d.fy = null;
-    });
-})
-.catch(error => {
-    console.error('Error loading data:', error);
-    const sampleData = {
-        nodes: [
-            { id: 1, name: "Project A", type: "project", links: ["2", "3"] },
-            { id: 2, name: "domain B", type: "domain", links: ["1"] },
-            { id: 3, name: "Service C", type: "service", links: ["1"] },
-            { id: 4, name: "User D", type: "user", links: ["2"] }
-        ]
-    };
-
-    const nodes = sampleData.nodes;
-    const links = [];
-    
-    nodes.forEach(node => {
-        if (node.links) {
-            node.links.forEach(targetId => {
-                links.push({
-                    source: node.id,
-                    target: targetId
-                });
-            });
-        }
-    });
-
-    // シミュレーション作成
-    simulation = d3.forceSimulation(nodes)
-        .force("link", d3.forceLink(links).id(d => d.id).distance(linkDistance))
-        .force("charge", d3.forceManyBody().strength(-30))
+    // シミュレーション作成（最初は fullNodes をそのまま使うが simulation.nodes() は updateGraph() で上書き）
+    simulation = d3.forceSimulation()
+        .force("link", d3.forceLink().id(d => d.id).distance(linkDistance))
+        .force("charge", d3.forceManyBody().strength(d => {
+            if (d.type === 'user') return -120;
+            if (d.type === 'service') return -60;
+            return -40;
+        }))
         .force("x", d3.forceX())
         .force("y", d3.forceY())
         .force("collision", d3.forceCollide().radius(d => {
-            return 10 + 5;
+            const cfg = (typeof config !== 'undefined' && config && config.types) ? config : (window.config && window.config.types ? window.config : null);
+            const baseRadius = (cfg && cfg.types && cfg.types[d.type] && cfg.types[d.type].size)
+                ? (cfg.types[d.type].size / 4)
+                : 10;
+            const nameLen = String(d.name || '').length;
+            const labelPadding = (d.type === 'user') ? 12 : 6;
+            const nameExtra = Math.min(24, nameLen * 1.5);
+            return baseRadius + labelPadding + nameExtra;
+        }).iterations(2));
+
+    // グループプレースホルダ生成（updateGraph で再バインド）
+    linkGroup = container.append("g").attr("class", "links");
+    nodeGroup = container.append("g").attr("class", "nodes");
+
+    // 初回描画
+    updateGraph();
+
+    // キー操作: 矢印で linkDistance 操作（既存）とパン系は toolbar で操作済み
+})
+.catch(error => {
+    console.error('Error loading data:', error);
+    // フォールバック用の簡易データ
+    const sampleData = {
+        nodes: [
+            { id: '1', name: "Project A", type: "project", links: ["2", "3"] },
+            { id: '2', name: "domain B", type: "domain", links: ["1"] },
+            { id: '3', name: "Service C", type: "service", links: ["1"] },
+            { id: '4', name: "User D", type: "user", links: ["2"] }
+        ]
+    };
+    fullNodes = sampleData.nodes;
+    fullLinks = [];
+    fullNodes.forEach(node => {
+        if (node.links) node.links.forEach(t => fullLinks.push({ source: node.id, target: t }));
+    });
+    visibleTypes = new Set(fullNodes.map(n => n.type));
+    const fbConfig = { types: { project:{}, domain:{}, service:{}, user:{} } };
+    try { window.config = fbConfig; } catch (e) {}
+    createTypeTooltip(fbConfig);
+    simulation = d3.forceSimulation()
+        .force("link", d3.forceLink().id(d => d.id).distance(linkDistance))
+        .force("charge", d3.forceManyBody().strength(-60))
+        .force("x", d3.forceX())
+        .force("y", d3.forceY())
+        .force("collision", d3.forceCollide().radius(10));
+    linkGroup = container.append("g").attr("class", "links");
+    nodeGroup = container.append("g").attr("class", "nodes");
+    updateGraph();
+});
+
+// グラフの再構築（visibleTypes に応じて表示ノード／リンクを変更）
+function updateGraph() {
+    // visible nodes & links
+    const visibleNodes = fullNodes.filter(n => visibleTypes.has(n.type));
+    const visibleNodeIds = new Set(visibleNodes.map(n => n.id));
+        const visibleLinks = fullLinks.filter(l => visibleNodeIds.has(l.source) && visibleNodeIds.has(l.target));
+
+    // simulation にノード／リンクを設定
+        // normalize links so source/target are node objects when possible
+        const nodeById = new Map(visibleNodes.map(n => [n.id, n]));
+        const normalizedLinks = visibleLinks.map(l => ({
+            source: (nodeById.get(l.source) || l.source),
+            target: (nodeById.get(l.target) || l.target)
         }));
 
-    const link = container.append("g")
+        simulation.nodes(visibleNodes);
+        simulation.force("link").links(normalizedLinks);
+
+    // link の data join
+    linkSelection = linkGroup.selectAll("line")
+        .data(visibleLinks, d => {
+            // Make key stable whether source/target are id strings or node objects
+            const s = (typeof d.source === 'object') ? d.source.id : d.source;
+            const t = (typeof d.target === 'object') ? d.target.id : d.target;
+            return s + "->" + t;
+        });
+
+    linkSelection.exit().remove();
+
+    const linkEnter = linkSelection.enter().append("line")
         .attr("stroke", "#999")
         .attr("stroke-opacity", 0.6)
-        .selectAll("line")
-        .data(links)
-        .join("line")
         .attr("stroke-width", 1.5);
 
-    const node = container.append("g")
-        .attr("stroke", "#fff")
-        .attr("stroke-width", 1.5)
-        .selectAll("g")
-        .data(nodes)
-        .join("g")
+    linkSelection = linkEnter.merge(linkSelection);
+
+    // node の data join
+    nodeSelection = nodeGroup.selectAll("g.node")
+        .data(visibleNodes, d => d.id);
+
+    // exit
+    nodeSelection.exit().remove();
+
+    // enter
+    const nodeEnter = nodeSelection.enter().append("g")
+        .attr("class", "node")
         .call(d3.drag()
             .on("start", dragstarted)
             .on("drag", dragged)
             .on("end", dragended));
 
-    node.append("circle")
-        .attr("r", 10 / 4)
-        .attr("fill", "blue");
+    nodeEnter.append("circle")
+        .attr("r", d => {
+            // デフォルトサイズフォールバック
+            try {
+                const cfg = (typeof config !== 'undefined' && config && config.types) ? config : (window.config && window.config.types ? window.config : null);
+                return (cfg && cfg.types && cfg.types[d.type] && cfg.types[d.type].size) ? cfg.types[d.type].size / 4 : 8;
+            } catch(e){ return 8; }
+        })
+        .attr("fill", d => {
+            try {
+                const cfg = (typeof config !== 'undefined' && config && config.types) ? config : (window.config && window.config.types ? window.config : null);
+                return (cfg && cfg.types && cfg.types[d.type] && cfg.types[d.type].color) ? cfg.types[d.type].color : color(d.type);
+            } catch(e){ return color(d.type); }
+        });
 
-    node.append("g")
-        .each(function(d) {
+    // label: users on right with smaller font, others centered
+    nodeEnter.each(function(d) {
+        if (d.type === "service") {
+            if (d.name && d.name.toLowerCase() === "github") {
+                d3.select(this).append("image")
+                    .attr("xlink:href", "github.svg")
+                    .attr("width", 12)
+                    .attr("height", 12)
+                    .attr("x", -6)
+                    .attr("y", -6);
+            } else {
+                d3.select(this).append("text")
+                    .text(d => d.name)
+                    .attr("text-anchor", "middle")
+                    .attr("dy", ".35em")
+                    .attr("font-size", "10px")
+                    .attr("font-family", "Arial, sans-serif")
+                    .attr("fill", "black");
+            }
+        } else if (d.type === "user") {
+            const r = 8;
+            d3.select(this).append("text")
+                .text(d => {
+                    const s = String(d.name || '');
+                    return s.length > 18 ? s.slice(0, 16) + '…' : s;
+                })
+                .attr("text-anchor", "start")
+                .attr("dx", r + 8)
+                .attr("dy", ".35em")
+                .attr("font-size", "9px")
+                .attr("font-family", "Arial, sans-serif")
+                .attr("fill", "black");
+        } else {
             d3.select(this).append("text")
                 .text(d => d.name)
                 .attr("text-anchor", "middle")
                 .attr("dy", ".35em")
                 .attr("font-size", "10px")
                 .attr("font-family", "Arial, sans-serif")
-                .attr("fill", "black")
-                .attr("stroke", "none");
-        });
+                .attr("fill", "black");
+        }
+    });
 
-    node.append("title")
-        .text(d => d.name);
+    nodeEnter.append("title").text(d => d.name);
 
+    nodeSelection = nodeEnter.merge(nodeSelection);
+
+    // tick handler を設定（毎回同じ simulation を使う）
     simulation.on("tick", () => {
-        link
-            .attr("x1", d => d.source.x)
-            .attr("y1", d => d.source.y)
-            .attr("x2", d => d.target.x)
-            .attr("y2", d => d.target.y);
+        // Build a quick lookup for node positions by id so we don't depend on DOM query timing
+        const nodeByIdTick = new Map((simulation.nodes() || []).map(n => [n.id, n]));
 
-        node
-            .attr("transform", d => `translate(${d.x},${d.y})`);
+        linkSelection
+            .attr("x1", d => {
+            const sx = (typeof d.source === 'object') ? d.source.x : (nodeByIdTick.get(d.source) || { x: 0 }).x;
+            return sx;
+            })
+            .attr("y1", d => {
+            const sy = (typeof d.source === 'object') ? d.source.y : (nodeByIdTick.get(d.source) || { y: 0 }).y;
+            return sy;
+            })
+            .attr("x2", d => {
+            const tx = (typeof d.target === 'object') ? d.target.x : (nodeByIdTick.get(d.target) || { x: 0 }).x;
+            return tx;
+            })
+            .attr("y2", d => {
+            const ty = (typeof d.target === 'object') ? d.target.y : (nodeByIdTick.get(d.target) || { y: 0 }).y;
+            return ty;
+            });
+
+        nodeSelection
+            .attr("transform", d => `translate(${d.x},${d.y})`)
+            .attr("data-id", d => d.id);
     });
 
-    const checkboxes = d3.selectAll(".filter-checkbox");
-    checkboxes.on("change", function() {
-        // アクティブな型を取得
-        const activeTypes = new Set(
-            Array.from(document.querySelectorAll('.filter-checkbox'))
-                .filter(cb => cb.checked)
-                .map(cb => cb.dataset.group)
-        );
+    // restart simulation gently
+    simulation.alpha(1).restart();
+}
 
-        // ノードの表示状態を更新
-        node.each(d => {
-            d.hidden = !activeTypes.has(d.type);
+// チェックボックス（ツールチップ）を作る関数
+function createTypeTooltip(config) {
+    const types = (config && config.types) ? Object.keys(config.types) : Array.from(new Set(fullNodes.map(n => n.type)));
+    const el = document.getElementById('network-type-tooltip');
+    el.innerHTML = '<strong style="display:block;margin-bottom:6px;">Filter types</strong>';
+    types.forEach(t => {
+        const id = `filter-${t}`;
+        const wrapper = document.createElement('label');
+        wrapper.style.display = 'flex';
+        wrapper.style.alignItems = 'center';
+        wrapper.style.gap = '8px';
+        wrapper.style.marginBottom = '4px';
+        wrapper.style.cursor = 'pointer';
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.id = id;
+        cb.checked = visibleTypes.has(t);
+        cb.dataset.group = t;
+        cb.className = 'filter-checkbox';
+        cb.addEventListener('change', (ev) => {
+            if (ev.target.checked) visibleTypes.add(t);
+            else visibleTypes.delete(t);
+            // グラフ更新
+            updateGraph();
         });
 
-        // リンクをフィルタリング
-        const filteredLinks = links.filter(link => {
-            const sourceNode = nodes.find(n => n.id === link.source.id || n.id === link.source);
-            const targetNode = nodes.find(n => n.id === link.target.id || n.id === link.target);
-            return !sourceNode.hidden && !targetNode.hidden;
-        });
+        const span = document.createElement('span');
+        span.textContent = typeLabel(t);
 
-        // シミュレーションを更新
-        simulation.force("link").links(filteredLinks);
-        simulation.alpha(1).restart();
-
-        // ノードとリンクの表示を更新
-        node.style("display", d => d.hidden ? "none" : "block");
-        link.style("display", d => {
-            const sourceNode = nodes.find(n => n.id === d.source.id || n.id === d.source);
-            const targetNode = nodes.find(n => n.id === d.target.id || n.id === d.target);
-            return (!sourceNode.hidden && !targetNode.hidden) ? "block" : "none";
-        });
+        wrapper.appendChild(cb);
+        wrapper.appendChild(span);
+        el.appendChild(wrapper);
     });
 
-    function dragstarted(event) {
-        if (!event.active) simulation.alphaTarget(0.3).restart();
-        event.subject.fx = event.subject.x;
-        event.subject.fy = event.subject.y;
+    // 表示トグルボタンをツールバー風に作る（右上に小さいボタン）
+    let toggleBtn = document.getElementById('network-type-toggle');
+    if (!toggleBtn) {
+        toggleBtn = document.createElement('button');
+        toggleBtn.id = 'network-type-toggle';
+        toggleBtn.textContent = 'Types';
+        toggleBtn.title = 'Toggle type filters';
+        toggleBtn.style.position = 'fixed';
+        toggleBtn.style.top = '80px';
+        toggleBtn.style.right = '12px';
+        toggleBtn.style.zIndex = 10000;
+        toggleBtn.style.padding = '6px 8px';
+        toggleBtn.style.fontSize = '13px';
+        toggleBtn.style.borderRadius = '6px';
+        toggleBtn.style.border = '1px solid rgba(0,0,0,0.08)';
+        toggleBtn.style.background = 'white';
+        toggleBtn.addEventListener('click', () => {
+            el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'block' : 'none';
+        });
+        document.body.appendChild(toggleBtn);
+    }
+    // 最初は表示する
+    el.style.display = 'block';
+}
+
+// type のラベル表示改善
+function typeLabel(t) {
+    const labels = {
+        project: 'Projects',
+        domain: 'Domains',
+        service: 'Services',
+        user: 'Users'
+    };
+    return labels[t] || t;
+}
+
+// drag ハンドラ
+function dragstarted(event) {
+    if (!simulation) return;
+    if (!event.active) simulation.alphaTarget(0.3).restart();
+    event.subject.fx = event.subject.x;
+    event.subject.fy = event.subject.y;
+}
+
+function dragged(event) {
+    if (!event.subject) return;
+    event.subject.fx = event.x;
+    event.subject.fy = event.y;
+
+    // ハイライト当たり判定
+    linkSelection
+        .attr("stroke", d => {
+            const sid = (typeof d.source === 'object') ? d.source.id : d.source;
+            const tid = (typeof d.target === 'object') ? d.target.id : d.target;
+            return (sid === event.subject.id || tid === event.subject.id) ? "red" : "#999";
+        })
+        .attr("stroke-width", d => {
+            const sid = (typeof d.source === 'object') ? d.source.id : d.source;
+            const tid = (typeof d.target === 'object') ? d.target.id : d.target;
+            return (sid === event.subject.id || tid === event.subject.id) ? 3 : 1.5;
+        });
+}
+
+function dragended(event) {
+    if (!event.active) simulation.alphaTarget(0);
+    if (event.subject) {
+      event.subject.fx = event.subject.x;
+      event.subject.fy = event.subject.y;
     }
 
-    function dragged(event) {
-        event.subject.fx = event.x;
-        event.subject.fy = event.y;
+    linkSelection
+        .attr("stroke", "#999")
+        .attr("stroke-width", 1.5);
+}
 
-        link
-            .attr("stroke", d => (d.source.id === event.subject.id || d.target.id === event.subject.id ? "red" : "#999"))
-            .attr("stroke-width", d => (d.source.id === event.subject.id || d.target.id === event.subject.id ? 3 : 1.5));
-    }
-
-    function dragended(event) {
-        if (!event.active) simulation.alphaTarget(0);
-        event.subject.fx = event.subject.x;
-        event.subject.fy = event.subject.y;
-
-        link
-            .attr("stroke", "#999")
-            .attr("stroke-width", 1.5);
-    }
-
-    node.on("dblclick", (event, d) => {
-        d.fx = null;
-        d.fy = null;
-    });
-});
-
-// --- ここから下を追加 ---
 document.addEventListener('keydown', function(e) {
-    if (!simulation) return; // simulationがまだ生成されていない場合は何もしない
+    if (!simulation) return;
+    // Link distance 操作（ArrowUp / ArrowDown）
     if (e.key === "ArrowUp") {
         linkDistance += 10;
         simulation.force("link").distance(linkDistance);
