@@ -15,20 +15,20 @@
     <!-- メニューバー -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
       <div class="container-fluid">
-        <a class="navbar-brand" href="#">Visualization</a>
+        <a class="navbar-brand" href="#">d3.js Visualization : </a>
         <div class="collapse navbar-collapse">
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             <li class="nav-item">
-              <a class="nav-link" href="#" id="menu-datatable">DataTable</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#" id="menu-table">Table</a>
+              <a class="nav-link" href="#" id="menu-network">Network</a>
             </li>
             <li class="nav-item">
               <a class="nav-link active" href="#" id="menu-sunburst">Sunburst</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#" id="menu-main">Network</a>
+              <a class="nav-link" href="#" id="menu-datatable">DataTable</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#" id="menu-table">Table</a>
             </li>
           </ul>
         </div>
@@ -83,7 +83,9 @@
       }
 
       // 初期表示は Table
-      showTable();
+      // 初期表示を DataTable に変更
+      loadScript('datatable.js');
+      setActiveMenu(document.getElementById('menu-datatable'));
 
       // メニュークリックで切り替え
       document.getElementById('menu-sunburst').addEventListener('click', function(e) {
@@ -91,7 +93,7 @@
         loadScript('sunburst.js');
         setActiveMenu(this);
       });
-      document.getElementById('menu-main').addEventListener('click', function(e) {
+      document.getElementById('menu-network').addEventListener('click', function(e) {
         e.preventDefault();
         loadScript('network.js');
         setActiveMenu(this);
