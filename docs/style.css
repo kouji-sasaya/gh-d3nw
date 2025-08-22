@@ -93,3 +93,52 @@ svg {
 .type-checkbox-container label {
   word-wrap: break-word; /* Wrap long text */
 }
+
+/* Ensure datatable container fills the canvas area */
+#datatable-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0;
+  background: white;
+  box-sizing: border-box;
+  overflow: hidden; /* DataTables will handle internal scrolling */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Make the table wrapper and table use full width */
+#datatable-container table.display {
+  width: 100% !important;
+  table-layout: fixed;
+}
+
+/* Ensure DataTables scroll body allows internal scrolling */
+.dataTables_scrollBody {
+  overflow: auto !important;
+}
+
+/* Optionally ensure the DataTables wrapper fills the container height */
+.dataTables_wrapper {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+#datatable-container thead input.filter-input,
+#datatable-container .filter-input,
+#datatable-container .plain-filter {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  font-size: 13px;
+}
+
+/* Ensure the header filter row stays visually compact */
+#datatable-container thead tr.filters th {
+  padding: 6px 8px;
+}
