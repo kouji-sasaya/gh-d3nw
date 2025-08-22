@@ -1,7 +1,9 @@
 (function() {
     function createDataTable(nodes) { // ← 引数名を nodes に変更
         const innerTableContainer = document.createElement('div');
-        innerTableContainer.className = 'container mt-4';
+        // container -> container-fluid に変更して横幅いっぱいに
+        innerTableContainer.className = 'container-fluid mt-4';
+        innerTableContainer.style.width = '100%';
 
         let currentFilter = "all";
         let currentSortColumn = null;
@@ -22,7 +24,9 @@
 
         // テーブル作成
         const table = document.createElement('table');
-        table.className = 'table table-striped table-hover';
+        // 横幅100% を強制
+        table.className = 'table table-striped table-hover w-100';
+        table.style.width = '100%';
 
         // ヘッダー作成
         const thead = document.createElement('thead');
@@ -143,7 +147,8 @@
         window.d3.select('#canvas svg').style('display', 'none');
         let tableContainer = window.d3.select('#table-container')
           .style('display', 'block')
-          .style('padding', '20px');
+          .style('padding', '20px')
+          .style('width', '100%'); // 親コンテナも幅100%に
         // Clear previous content
         tableContainer.html('');
         // データを読み込んでテーブルを表示
