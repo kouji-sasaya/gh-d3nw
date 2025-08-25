@@ -19,7 +19,7 @@
         <div class="collapse navbar-collapse">
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             <li class="nav-item">
-              <a class="nav-link" href="#" id="menu-network">Network</a>
+              <a class="nav-link" href="#" id="menu-forcelayout">ForceLayout</a> <!-- ここを変更 -->
             </li>
             <li class="nav-item">
               <a class="nav-link active" href="#" id="menu-sunburst">Sunburst</a>
@@ -93,11 +93,6 @@
         loadScript('sunburst.js');
         setActiveMenu(this);
       });
-      document.getElementById('menu-network').addEventListener('click', function(e) {
-        e.preventDefault();
-        loadScript('network.js');
-        setActiveMenu(this);
-      });
       document.getElementById('menu-datatable').addEventListener('click', function(e) {
         e.preventDefault();
         loadScript('datatable.js');
@@ -106,6 +101,11 @@
       document.getElementById('menu-table').addEventListener('click', function(e) {
         e.preventDefault();
         showTable();
+      });
+      document.getElementById('menu-forcelayout').addEventListener('click', function(e) {
+        e.preventDefault();
+        loadScript('forcelayout.js');
+        setActiveMenu(this);
       });
 
       // アクティブメニューの切り替え
