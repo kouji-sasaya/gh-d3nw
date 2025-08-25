@@ -1,6 +1,11 @@
-# Network Visualization Tool
+# d3.js Visualization Tool
 
-A D3.js-based tool for visualizing organizational networks including projects, companies, employees, and services.
+A d3.js based tool for visualizing organizational networks including projects, domain, user, and services.
+
+
+## GitHub example web page
+
+https://kouji-sasaya.github.io/gh-d3nw/
 
 ## Usage of Services
 
@@ -12,12 +17,13 @@ Services represent external tools or platforms that are linked to projects. To a
 
 Example:
 ```json
-{
-  "id": "s1",
-  "name": "Google Cloud",
-  "type": "service",
-  "links": ["p1"]
-}
+[
+  {"id": "P0001", "address": "", "name": "Project X","type": "service","links": []},
+  {"id": "D0001", "address": "A domain",  "name": "A domain","type": "domain","links": ["P0001"]},
+  {"id": "S0001", "address": "https://github.com", "name": "GitHub","type": "service","links": ["P0001", "D0001"]},
+  {"id": "U0001", "address": "",  "name": "Cat Rock","type": "user","links": ["P0001", "D0001", "S0001"]},
+  {"id": "U0002", "address": "",  "name": "Dog Jazz","type": "user","links": ["P0001", "D0001", "S0001"]}
+]
 ```
 
 ## Visualization in Browser
@@ -26,7 +32,10 @@ To view the visualization:
 
 1. Host the files using a local web server:
 ```bash
-./service up
+$ gh extension install kouji-sasaya/gh-d3nw
+$ mkdir work
+$ gh d3nw install
+$ gh d3nw up
 ```
 
 2. Open in browser:
@@ -50,15 +59,6 @@ The data.json file contains the following structure:
       "links": ["connected_node_ids"]
     }
   ],
-  "config": {
-    "version": "1.0",
-    "types": {
-      "project": {"size": 100, "color": "#4285F4"},
-      "domain": {"size": 70, "color": "#DB4437"},
-      "service": {"size": 40, "color": "#F4B400"},
-      "employee": {"size": 20, "color": "#0F9D58"}
-    }
-  }
 }
 ```
 
@@ -66,15 +66,27 @@ Node types:
 - project: Major initiatives or projects
 - domain: Organizations involved
 - service: External tools or platforms
-- employee: Individual team members
+- user: Individual users
 
 Links represent relationships between nodes.
+
+```
+  "config": {
+    "version": "1.0",
+    "types": {
+      "project": {"size": 100, "color": "#4285F4"},
+      "domain": {"size": 70, "color": "#DB4437"},
+      "service": {"size": 40, "color": "#F4B400"},
+      "user": {"size": 20, "color": "#0F9D58"}
+    }
+  }
+```
 
 ## License
 
 MIT License
 
-Copyright (c) 2023
+Copyright (c) 2025
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
