@@ -315,6 +315,21 @@ function updateGraph() {
                 .attr("font-family", "Arial, sans-serif")
                 .attr("font-weight", "bold")
                 .attr("fill", "#333");
+        } else if (d.type === "team") {
+            // teamノードは水色＋太字ラベル
+            d3.select(this).append("circle")
+                .attr("r", 20)
+                .attr("fill", "#0097A7") // config.jsonの色
+                .attr("stroke", "#006978")
+                .attr("stroke-width", 2);
+            d3.select(this).append("text")
+                .text(d => d.name)
+                .attr("text-anchor", "middle")
+                .attr("dy", ".35em")
+                .attr("font-size", "12px")
+                .attr("font-family", "Arial, sans-serif")
+                .attr("font-weight", "bold")
+                .attr("fill", "#fff");
         } else {
             d3.select(this).append("text")
                 .text(d => d.name)
@@ -364,7 +379,10 @@ function updateGraph() {
 
 // チェックボックス（ツールチップ）を作る関数
 function createTypeTooltip(config) {
-    const types = (config && config.types) ? Object.keys(config.types) : Array.from(new Set(fullNodes.map(n => n.type)));
+    // 順番を指定
+    const order = ['project', 'domain', 'group', 'service', 'team', 'user'];
+    const types = order.filter(t => (config && config.types && config.types[t]))
+        .concat(Object.keys(config.types || {}).filter(t => !order.includes(t)));
     const el = document.getElementById('network-type-tooltip');
     el.innerHTML = '<strong style="display:block;margin-bottom:6px;">Filter types</strong>';
     types.forEach(t => {
@@ -385,7 +403,6 @@ function createTypeTooltip(config) {
         cb.addEventListener('change', (ev) => {
             if (ev.target.checked) visibleTypes.add(t);
             else visibleTypes.delete(t);
-            // グラフ更新
             updateGraph();
         });
 
@@ -427,9 +444,10 @@ function typeLabel(t) {
     const labels = {
         project: 'Projects',
         domain: 'Domains',
-        user: 'Users',
+        group: 'Groups',
+        team: 'Teams',
         service: 'Services',
-        group: 'Groups' // ← group追加
+        user: 'Users',
     };
     return labels[t] || t;
 }
