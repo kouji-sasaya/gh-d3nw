@@ -314,7 +314,7 @@ function updateGraph() {
                 .attr("font-size", "12px")
                 .attr("font-family", "Arial, sans-serif")
                 .attr("font-weight", "bold")
-                .attr("fill", "#333");
+                .attr("fill", "black"); // ← ここを黒に
         } else if (d.type === "team") {
             // teamノードは水色＋太字ラベル
             d3.select(this).append("circle")
@@ -329,7 +329,7 @@ function updateGraph() {
                 .attr("font-size", "12px")
                 .attr("font-family", "Arial, sans-serif")
                 .attr("font-weight", "bold")
-                .attr("fill", "#fff");
+                .attr("fill", "black"); // ← ここを黒に
         } else {
             d3.select(this).append("text")
                 .text(d => d.name)
