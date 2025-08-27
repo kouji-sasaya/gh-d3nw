@@ -19,16 +19,19 @@
         <div class="collapse navbar-collapse">
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             <li class="nav-item">
-              <a class="nav-link" href="#" id="menu-forcelayout">ForceLayout</a>
+              <a class="nav-link" href="#" id="menu-forcelayout">D3Force2D</a> <!-- 名前変更 -->
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#" id="menu-force3d">D3Force3D(N/A)</a> <!-- 新規追加 -->
             </li>
             <li class="nav-item">
               <a class="nav-link active" href="#" id="menu-sunburst">Sunburst</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#" id="menu-datatable">TableForBusiness</a> <!-- ここを変更 -->
+              <a class="nav-link" href="#" id="menu-datatable">TableForBusiness</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#" id="menu-table">TableForToyBox</a> <!-- ここを変更 -->
+              <a class="nav-link" href="#" id="menu-table">TableForToyBox</a>
             </li>
           </ul>
         </div>
@@ -102,9 +105,23 @@
         e.preventDefault();
         showTable();
       });
+      // D3-Force-2D
       document.getElementById('menu-forcelayout').addEventListener('click', function(e) {
         e.preventDefault();
         loadScript('forcelayout.js');
+        setActiveMenu(this);
+      });
+
+      // D3-Force-3D: クリックで白いキャンバスのみ表示
+      document.getElementById('menu-force3d').addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelector("#canvas").innerHTML = "";
+        const blankDiv = document.createElement('div');
+        blankDiv.style.background = "#fff";
+        blankDiv.style.width = "100%";
+        blankDiv.style.height = "100%";
+        blankDiv.style.minHeight = "400px";
+        document.querySelector("#canvas").appendChild(blankDiv);
         setActiveMenu(this);
       });
 
