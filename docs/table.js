@@ -19,6 +19,8 @@
                 <button type="button" class="btn btn-primary" data-filter="domain">Domains</button>
                 <button type="button" class="btn btn-primary" data-filter="service">Services</button>
                 <button type="button" class="btn btn-primary" data-filter="user">Users</button>
+                <button type="button" class="btn btn-primary" data-filter="team">Teams</button>
+                <button type="button" class="btn btn-primary" data-filter="group">Groups</button>
             </div>
         `;
 
@@ -137,7 +139,9 @@
             project: 'primary',
             domain: 'danger',
             service: 'warning',
-            user: 'success'
+            user: 'success',
+            team: 'info',    // 追加
+            group: 'dark'    // 追加
         };
         return colorMap[type] || 'secondary';
     }
