@@ -82,8 +82,8 @@ Links represent relationships between nodes.
       "domain": { "size": 70, "color": "#C62828" },
       "group": { "size": 50, "color": "#7E57C2" },
       "service": { "size": 40, "color": "#FFB300" },
-      "user": { "size": 20, "color": "#388E3C" },
-      "team": { "size": 60, "color": "#0097A7" }
+      "team": { "size": 60, "color": "#0097A7" },
+      "user": { "size": 20, "color": "#388E3C" }
     }
   }
 }
