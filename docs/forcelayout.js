@@ -271,22 +271,14 @@ function updateGraph() {
     // label: users on right with smaller font, others centered
     nodeEnter.each(function(d) {
         if (d.type === "service") {
-            if (d.name && d.name.toLowerCase() === "github") {
-                d3.select(this).append("image")
-                    .attr("xlink:href", "github.svg")
-                    .attr("width", 12)
-                    .attr("height", 12)
-                    .attr("x", -6)
-                    .attr("y", -6);
-            } else {
-                d3.select(this).append("text")
-                    .text(d => d.name)
-                    .attr("text-anchor", "middle")
-                    .attr("dy", ".35em")
-                    .attr("font-size", "10px")
-                    .attr("font-family", "Arial, sans-serif")
-                    .attr("fill", "black");
-            }
+            // すべてテキスト表示に統一
+            d3.select(this).append("text")
+                .text(d => d.name)
+                .attr("text-anchor", "middle")
+                .attr("dy", ".35em")
+                .attr("font-size", "10px")
+                .attr("font-family", "Arial, sans-serif")
+                .attr("fill", "black");
         } else if (d.type === "user") {
             const r = 8;
             d3.select(this).append("text")
@@ -314,7 +306,7 @@ function updateGraph() {
                 .attr("font-size", "12px")
                 .attr("font-family", "Arial, sans-serif")
                 .attr("font-weight", "bold")
-                .attr("fill", "black"); // ← ここを黒に
+                .attr("fill", "black");
         } else if (d.type === "team") {
             // teamノードは水色＋太字ラベル
             d3.select(this).append("circle")
@@ -329,7 +321,7 @@ function updateGraph() {
                 .attr("font-size", "12px")
                 .attr("font-family", "Arial, sans-serif")
                 .attr("font-weight", "bold")
-                .attr("fill", "black"); // ← ここを黒に
+                .attr("fill", "black");
         } else {
             d3.select(this).append("text")
                 .text(d => d.name)
