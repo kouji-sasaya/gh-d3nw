@@ -110,8 +110,8 @@ let visibleTypes = new Set(); // 現在表示する type の集合
 
 // データと設定を同時に取得
 Promise.all([
-  fetch('data.json').then(res => res.json()),
-  fetch('config.json').then(res => res.json())
+  fetch('data.json?' + Date.now()).then(res => res.json()), // ←キャッシュ回避
+  fetch('config.json?' + Date.now()).then(res => res.json()) // ←キャッシュ回避
 ]).then(([nodesData, configData]) => {
     const config = configData.config;
     // expose to window so other parts of the file that reference window.config work
