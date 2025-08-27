@@ -50,16 +50,19 @@ $ gh d3nw up
 The data.json file contains the following structure:
 
 ```json
-{
-  "nodes": [
-    {
+[
+   {
       "id": "unique_identifier",
-      "name": "display_name",
-      "type": "node_type",
-      "links": ["connected_node_ids"]
-    }
-  ],
-}
+      "address": "Address(ex: e-mail address)",
+      "name": "Display Name(ex: Your Name)",
+      "type": "Node Type(ex: project|domain|group|service|team|user)",
+      "links": ["Some node ids(ex: U0001)"]
+    },
+    {--Next Node--},
+    {--Next Node--},
+    {--Next Node--},
+    {}
+]
 ```
 
 Node types:
@@ -71,15 +74,19 @@ Node types:
 Links represent relationships between nodes.
 
 ```
+{
   "config": {
     "version": "1.0",
     "types": {
-      "project": {"size": 100, "color": "#4285F4"},
-      "domain": {"size": 70, "color": "#DB4437"},
-      "service": {"size": 40, "color": "#F4B400"},
-      "user": {"size": 20, "color": "#0F9D58"}
+      "project": { "size": 100, "color": "#1976D2" },
+      "domain": { "size": 70, "color": "#C62828" },
+      "group": { "size": 50, "color": "#7E57C2" },
+      "service": { "size": 40, "color": "#FFB300" },
+      "user": { "size": 20, "color": "#388E3C" },
+      "team": { "size": 60, "color": "#0097A7" }
     }
   }
+}
 ```
 
 ## License
