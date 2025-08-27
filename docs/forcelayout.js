@@ -300,6 +300,21 @@ function updateGraph() {
                 .attr("font-size", "9px")
                 .attr("font-family", "Arial, sans-serif")
                 .attr("fill", "black");
+        } else if (d.type === "group") {
+            // groupノードは白背景＋枠線＋太字ラベル
+            d3.select(this).append("circle")
+                .attr("r", 18)
+                .attr("fill", "#fff")
+                .attr("stroke", "#888")
+                .attr("stroke-width", 2);
+            d3.select(this).append("text")
+                .text(d => d.name)
+                .attr("text-anchor", "middle")
+                .attr("dy", ".35em")
+                .attr("font-size", "12px")
+                .attr("font-family", "Arial, sans-serif")
+                .attr("font-weight", "bold")
+                .attr("fill", "#333");
         } else {
             d3.select(this).append("text")
                 .text(d => d.name)
@@ -412,8 +427,9 @@ function typeLabel(t) {
     const labels = {
         project: 'Projects',
         domain: 'Domains',
+        user: 'Users',
         service: 'Services',
-        user: 'Users'
+        group: 'Groups' // ← group追加
     };
     return labels[t] || t;
 }
