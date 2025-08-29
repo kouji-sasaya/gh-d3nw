@@ -393,7 +393,7 @@ function updateGraph() {
             d3.select(this).append("text")
                 .text(d => {
                     const s = String(d.name || '');
-                    return s.length > 18 ? s.slice(0, 16) + '…' : s;
+                    return s.length > 32 ? s.slice(0, 30) + '…' : s;
                 })
                 .attr("text-anchor", "start")
                 .attr("dx", r + 8)
