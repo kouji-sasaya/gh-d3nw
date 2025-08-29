@@ -107,6 +107,7 @@ let nodeSelection = null;
 let linkGroup = null;
 let nodeGroup = null;
 let visibleTypes = new Set(); // 現在表示する type の集合
+let animationIntervals = new Map(); // アニメーション管理用
 
 // データと設定を同時に取得
 Promise.all([
@@ -202,8 +203,104 @@ Promise.all([
     updateGraph();
 });
 
+// アニメーション関数：エラー・警告ノードの点滅・拡大縮小
+function startStatusAnimation(nodeId, status) {
+    // 既存のアニメーションがあれば停止
+    if (animationIntervals.has(nodeId)) {
+        clearInterval(animationIntervals.get(nodeId));
+        animationIntervals.delete(nodeId);
+    }
+
+    const nodeElement = nodeGroup.select(`g[data-id="${nodeId}"]`);
+    if (nodeElement.empty()) return;
+
+    const circle = nodeElement.select('circle');
+    if (circle.empty()) return;
+
+    // 元の値を取得
+    const nodeData = fullNodes.find(n => n.id === nodeId);
+    if (!nodeData) return;
+
+    const config = window.config || {};
+    const originalColor = (config.types && config.types[nodeData.type] && config.types[nodeData.type].color) 
+        ? config.types[nodeData.type].color 
+        : color(nodeData.type);
+    const originalSize = (config.types && config.types[nodeData.type] && config.types[nodeData.type].size) 
+        ? config.types[nodeData.type].size / 4 
+        : 8;
+
+    // ステータスに応じた色とサイズ
+    let alertColor, alertSize;
+    if (status === 'error') {
+        alertColor = '#FF0000'; // 赤色
+        alertSize = originalSize * 2; // 2倍のサイズ
+    } else if (status === 'warning') {
+        alertColor = '#FFFF00'; // 黄色
+        alertSize = originalSize * 2; // 2倍のサイズ
+    } else {
+        return; // error または warning でない場合は何もしない
+    }
+
+    let isAlertState = false;
+    const interval = setInterval(() => {
+        if (isAlertState) {
+            // 元の状態に戻す
+            circle.transition()
+                .duration(500)
+                .attr('fill', originalColor)
+                .attr('r', originalSize);
+            isAlertState = false;
+        } else {
+            // アラート状態にする
+            circle.transition()
+                .duration(500)
+                .attr('fill', alertColor)
+                .attr('r', alertSize);
+            isAlertState = true;
+        }
+    }, 1000); // 1秒間隔
+
+    animationIntervals.set(nodeId, interval);
+}
+
+function stopStatusAnimation(nodeId) {
+    if (animationIntervals.has(nodeId)) {
+        clearInterval(animationIntervals.get(nodeId));
+        animationIntervals.delete(nodeId);
+
+        // 元の状態に戻す
+        const nodeElement = nodeGroup.select(`g[data-id="${nodeId}"]`);
+        if (!nodeElement.empty()) {
+            const circle = nodeElement.select('circle');
+            if (!circle.empty()) {
+                const nodeData = fullNodes.find(n => n.id === nodeId);
+                if (nodeData) {
+                    const config = window.config || {};
+                    const originalColor = (config.types && config.types[nodeData.type] && config.types[nodeData.type].color) 
+                        ? config.types[nodeData.type].color 
+                        : color(nodeData.type);
+                    const originalSize = (config.types && config.types[nodeData.type] && config.types[nodeData.type].size) 
+                        ? config.types[nodeData.type].size / 4 
+                        : 8;
+                    
+                    circle.transition()
+                        .duration(300)
+                        .attr('fill', originalColor)
+                        .attr('r', originalSize);
+                }
+            }
+        }
+    }
+}
+
 // グラフの再構築（visibleTypes に応じて表示ノード／リンクを変更）
 function updateGraph() {
+    // 既存のアニメーションをすべて停止
+    animationIntervals.forEach((interval, nodeId) => {
+        clearInterval(interval);
+    });
+    animationIntervals.clear();
+
     // visible nodes & links
     const visibleNodes = fullNodes.filter(n => visibleTypes.has(n.type));
     const visibleNodeIds = new Set(visibleNodes.map(n => n.id));
@@ -248,6 +345,7 @@ function updateGraph() {
     // enter
     const nodeEnter = nodeSelection.enter().append("g")
         .attr("class", "node")
+        .attr("data-id", d => d.id) // data-id属性を追加
         .call(d3.drag()
             .on("start", dragstarted)
             .on("drag", dragged)
@@ -348,6 +446,19 @@ function updateGraph() {
 
     nodeSelection = nodeEnter.merge(nodeSelection);
 
+    // ステータスアニメーションを開始
+    visibleNodes.forEach(node => {
+        if (node.status === 'error' || node.status === 'warning') {
+            // 少し遅延を入れてアニメーションを開始（ノードの初期化完了を待つ）
+            setTimeout(() => {
+                startStatusAnimation(node.id, node.status);
+            }, 100);
+        } else {
+            // ステータスがない場合はアニメーションを停止
+            stopStatusAnimation(node.id);
+        }
+    });
+
     // tick handler を設定（毎回同じ simulation を使う）
     simulation.on("tick", () => {
         // Build a quick lookup for node positions by id so we don't depend on DOM query timing
@@ -372,8 +483,7 @@ function updateGraph() {
             });
 
         nodeSelection
-            .attr("transform", d => `translate(${d.x},${d.y})`)
-            .attr("data-id", d => d.id);
+            .attr("transform", d => `translate(${d.x},${d.y})`);
     });
 
     // restart simulation gently
@@ -506,4 +616,12 @@ document.addEventListener('keydown', function(e) {
         simulation.force("link").distance(linkDistance);
         simulation.alpha(1).restart();
     }
+});
+
+// ページアンロード時にアニメーションをクリーンアップ
+window.addEventListener('beforeunload', () => {
+    animationIntervals.forEach((interval) => {
+        clearInterval(interval);
+    });
+    animationIntervals.clear();
 });
