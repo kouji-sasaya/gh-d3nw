@@ -33,10 +33,12 @@
                 data: k,
                 render: k === 'status'
                   ? function(data) {
-                      if (data === '✔') {
-                        return `<span style="color:#388E3C;font-size:1.2em;">✔</span>`;
-                      } else if (data === '✘') {
-                        return `<span style="color:#C62828;font-size:1.2em;">✘</span>`;
+                      if (data === 'pass') {
+                        return `<span style="color:#388E3C;font-size:1.2em;">pass</span>`;
+                      } else if (data === 'error') {
+                        return `<span style="color:#C62828;font-size:1.2em;">error</span>`;
+                      } else if (data === 'warning') {
+                        return `<span style="color:#FFB300;font-size:1.2em;">warning</span>`;
                       } else {
                         return '';
                       }
@@ -256,8 +258,10 @@
                     paginate: { previous: 'Prev', next: 'Next' }
                 },
                 createdRow: function(row, data) {
-                    if (data.status === '✘') {
+                    if (data.status === 'error') {
                         row.style.backgroundColor = '#ffeaea'; // 薄い赤色
+                    } else if (data.status === 'warning') {
+                        row.style.backgroundColor = '#fffbe5'; // 薄い黄色
                     }
                 },
             };
