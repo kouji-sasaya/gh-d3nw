@@ -2,12 +2,12 @@
   "config": {
     "version": "1.0",
     "types": {
-      "project": { "size": 100, "color": "#1976D2" },
-      "domain": { "size": 70, "color": "#C62828" },
-      "group": { "size": 50, "color": "#7E57C2" },
-      "service": { "size": 40, "color": "#FFB300" },
-      "team": { "size": 60, "color": "#0097A7" },
-      "user": { "size": 20, "color": "#388E3C" }
+      "project": { "size": 200, "color": "#1976D2" },
+      "domain": { "size": 150, "color": "#C62828" },
+      "group": { "size": 100, "color": "#7E57C2" },
+      "service": { "size": 75, "color": "#FFB300" },
+      "team": { "size": 50, "color": "#0097A7" },
+      "user": { "size": 25, "color": "#388E3C" }
     }
   }
 }
