@@ -31,7 +31,17 @@
             const columns = keys.map(k => ({
                 title: k.charAt(0).toUpperCase() + k.slice(1),
                 data: k,
-                render: d => Array.isArray(d) ? d.join(', ') : (d === null || d === undefined ? '-' : String(d))
+                render: k === 'status'
+                  ? function(data) {
+                      if (data === '✔') {
+                        return `<span style="color:#388E3C;font-size:1.2em;">✔</span>`;
+                      } else if (data === '✘') {
+                        return `<span style="color:#C62828;font-size:1.2em;">✘</span>`;
+                      } else {
+                        return '';
+                      }
+                    }
+                  : d => Array.isArray(d) ? d.join(', ') : (d === null || d === undefined ? '' : String(d))
             }));
 
             // Helper: build a THEAD with a filter row
@@ -239,11 +249,17 @@
                 scrollCollapse: true,
                 scrollX: true,
                 orderCellsTop: true, // allow filters in a header row
+                order: [], // ← デフォルトでソートしない（追加）
                 language: {
                     emptyTable: 'No data available',
                     search: 'Filter:',
                     paginate: { previous: 'Prev', next: 'Next' }
-                }
+                },
+                createdRow: function(row, data) {
+                    if (data.status === '✘') {
+                        row.style.backgroundColor = '#ffeaea'; // 薄い赤色
+                    }
+                },
             };
 
             let dtInstance = null;
