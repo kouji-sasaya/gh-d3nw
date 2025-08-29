@@ -51,24 +51,24 @@ The data.json file contains the following structure:
 
 ```json
 [
-   {
-      "id": "unique_identifier",
-      "address": "Address(ex: e-mail address)",
-      "name": "Display Name(ex: Your Name)",
-      "type": "Node Type(ex: project|domain|group|service|team|user)",
-      "links": ["Some node ids(ex: U0001)"]
-    },
-    {--Next Node--},
-    {--Next Node--},
-    {--Next Node--},
-    {}
+  {"id": "P0001","status": "","address": "https://project-x.aa.com","name": "Project-X","type": "project","links": [""]},
+  {"id": "D0001","status": "","address": "https://aaa.com","name": "a&a&a","type": "domain","links": ["P0001)"]},
+  {"id": "S0001","status": "","address": "https://github.com","name": "github","type": "service","links": ["P0001)"]},
+  {"id": "U0001","status": "✔","address": "my-name@aaa.com","name": "My Name","type": "user","links": ["P0001", "D0001", "S0001"]},
+  {"id": "U0002","status": "✘","address": "your-name@aaa.com","name": "Your Name","type": "user","links": ["P0001", "D0001", "S0001"]},
+  {--Next Node--},
+  {--Next Node--},
+  {--Next Node--},
+  {}
 ]
 ```
 
 Node types:
 - project: Major initiatives or projects
 - domain: Organizations involved
+- group: A set of users with shared roles or attributes.
 - service: External tools or platforms
+- team: Users working together on a project.
 - user: Individual users
 
 Links represent relationships between nodes.
