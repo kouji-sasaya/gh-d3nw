@@ -266,7 +266,18 @@ function updateGraph() {
                 const cfg = (typeof config !== 'undefined' && config && config.types) ? config : (window.config && window.config.types ? window.config : null);
                 return (cfg && cfg.types && cfg.types[d.type] && cfg.types[d.type].color) ? cfg.types[d.type].color : color(d.type);
             } catch(e){ return color(d.type); }
-        });
+        })
+        .attr('stroke', d => {
+            // typeごとに縁取り色を指定
+            if (d.type === 'team') return '#006064';      // team: 濃い色
+            if (d.type === 'group') return '#4527A0';     // group: 濃い色
+            if (d.type === 'project') return '#0D47A1';   // project: 濃い色
+            if (config[d.type] && config[d.type].color) {
+                return config[d.type].color;
+            }
+            return '#333';
+        })
+        .attr('stroke-width', 2);
 
     // label: users on right with smaller font, others centered
     nodeEnter.each(function(d) {
