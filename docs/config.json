@@ -3,10 +3,10 @@
     "version": "1.0",
     "types": {
       "project": { "size": 300, "color": "#1976D2" },
-      "domain":  { "size": 200, "color": "#FBC02D" },
+      "domain":  { "size": 200, "color": "#8E24AA" },
       "group":   { "size": 100, "color": "#C62828" },
       "service": { "size": 75,  "color": "#0097A7" },
-      "team":    { "size": 50,  "color": "#8E24AA" },
+      "team":    { "size": 50,  "color": "#FBC02D" },
       "user":    { "size": 25,  "color": "#388E3C" }
     }
   }
