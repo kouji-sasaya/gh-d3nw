@@ -109,6 +109,87 @@ let nodeGroup = null;
 let visibleTypes = new Set(); // 現在表示する type の集合
 let animationIntervals = new Map(); // アニメーション管理用
 
+// --- error/warningノードの同期点滅アニメーション ---
+let animationTimer = null;
+let blinkingState = false;
+
+function startStatusBlinking(nodes) {
+    if (animationTimer) {
+        clearInterval(animationTimer);
+        animationTimer = null;
+    }
+    if (!nodes.length) return;
+
+    blinkingState = false;
+
+    animationTimer = setInterval(() => {
+        blinkingState = !blinkingState;
+        nodes.forEach(node => {
+            const nodeElement = nodeGroup.select(`g[data-id="${node.id}"]`);
+            if (nodeElement.empty()) return;
+            const circle = nodeElement.select('circle');
+            if (circle.empty()) return;
+
+            const config = window.config || {};
+            const originalColor = (config.types && config.types[node.type] && config.types[node.type].color)
+                ? config.types[node.type].color
+                : color(node.type);
+            const originalSize = (config.types && config.types[node.type] && config.types[node.type].size)
+                ? config.types[node.type].size / 4
+                : 8;
+
+            let alertColor, alertSize;
+            if (node.status === 'error') {
+                alertColor = '#FF0000';
+                alertSize = originalSize * 2;
+            } else if (node.status === 'warning') {
+                alertColor = '#FFFF00';
+                alertSize = originalSize * 2;
+            } else {
+                return;
+            }
+
+            if (blinkingState) {
+                circle.transition()
+                    .duration(500)
+                    .attr('fill', alertColor)
+                    .attr('r', alertSize);
+            } else {
+                circle.transition()
+                    .duration(500)
+                    .attr('fill', originalColor)
+                    .attr('r', originalSize);
+            }
+        });
+    }, 1000);
+}
+
+function stopStatusBlinking() {
+    if (animationTimer) {
+        clearInterval(animationTimer);
+        animationTimer = null;
+    }
+    // 全ノードを元の状態に戻す
+    nodeGroup.selectAll('g.node').each(function(d) {
+        if (d.status === 'error' || d.status === 'warning') {
+            const circle = d3.select(this).select('circle');
+            if (!circle.empty()) {
+                const config = window.config || {};
+                const originalColor = (config.types && config.types[d.type] && config.types[d.type].color)
+                    ? config.types[d.type].color
+                    : color(d.type);
+                const originalSize = (config.types && config.types[d.type] && config.types[d.type].size)
+                    ? config.types[d.type].size / 4
+                    : 8;
+                circle.transition()
+                    .duration(300)
+                    .attr('fill', originalColor)
+                    .attr('r', originalSize);
+            }
+        }
+    });
+}
+
 // データと設定を同時に取得
 Promise.all([
   fetch('data.json?' + Date.now()).then(res => res.json()), // ←キャッシュ回避
@@ -296,10 +377,7 @@ function stopStatusAnimation(nodeId) {
 // グラフの再構築（visibleTypes に応じて表示ノード／リンクを変更）
 function updateGraph() {
     // 既存のアニメーションをすべて停止
-    animationIntervals.forEach((interval, nodeId) => {
-        clearInterval(interval);
-    });
-    animationIntervals.clear();
+    stopStatusBlinking();
 
     // visible nodes & links
     const visibleNodes = fullNodes.filter(n => visibleTypes.has(n.type));
@@ -446,18 +524,13 @@ function updateGraph() {
 
     nodeSelection = nodeEnter.merge(nodeSelection);
 
-    // ステータスアニメーションを開始
-    visibleNodes.forEach(node => {
-        if (node.status === 'error' || node.status === 'warning') {
-            // 少し遅延を入れてアニメーションを開始（ノードの初期化完了を待つ）
-            setTimeout(() => {
-                startStatusAnimation(node.id, node.status);
-            }, 100);
-        } else {
-            // ステータスがない場合はアニメーションを停止
-            stopStatusAnimation(node.id);
-        }
-    });
+    // ステータスアニメーションを同期して開始
+    const blinkingNodes = visibleNodes.filter(n => n.status === 'error' || n.status === 'warning');
+    if (blinkingNodes.length) {
+        setTimeout(() => {
+            startStatusBlinking(blinkingNodes);
+        }, 100);
+    }
 
     // tick handler を設定（毎回同じ simulation を使う）
     simulation.on("tick", () => {
@@ -620,8 +693,5 @@ document.addEventListener('keydown', function(e) {
 
 // ページアンロード時にアニメーションをクリーンアップ
 window.addEventListener('beforeunload', () => {
-    animationIntervals.forEach((interval) => {
-        clearInterval(interval);
-    });
-    animationIntervals.clear();
+    stopStatusBlinking();
 });
