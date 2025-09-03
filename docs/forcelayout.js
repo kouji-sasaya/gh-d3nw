@@ -665,3 +665,108 @@ document.addEventListener('keydown', function(e) {
 window.addEventListener('beforeunload', () => {
     stopStatusBlinking();
 });
+
+// ステータスフィルタ用ツールチップを作成
+function createStatusTooltip() {
+    const statuses = ['pass', 'warning', 'error'];
+    let el = document.getElementById('network-status-tooltip');
+    if (!el) {
+        // ツールチップ要素がなければ新規作成
+        el = document.createElement('div');
+        el.id = 'network-status-tooltip';
+        el.className = 'type-checkbox-container';
+        el.style.position = 'fixed';
+        el.style.top = '300px';
+        el.style.right = '12px';
+        el.style.padding = '8px';
+        el.style.background = 'rgba(255,255,255,0.95)';
+        el.style.border = '1px solid rgba(0,0,0,0.08)';
+        el.style.borderRadius = '6px';
+        el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+        el.style.zIndex = 9999;
+        el.style.fontSize = '13px';
+        el.style.display = 'none'; // 最初は非表示
+        document.body.appendChild(el);
+    }
+    // ツールチップ内容をセット
+    el.innerHTML = '<strong style="display:block;margin-bottom:6px;">Filter status</strong>';
+    statuses.forEach(st => {
+        const wrapper = document.createElement('label');
+        wrapper.style.display = 'flex';
+        wrapper.style.alignItems = 'center';
+        wrapper.style.gap = '8px';
+        wrapper.style.marginBottom = '4px';
+        wrapper.style.cursor = 'pointer';
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.id = 'status-' + st;
+        cb.checked = true;
+        cb.dataset.status = st;
+        cb.className = 'status-filter-checkbox';
+        cb.addEventListener('change', () => {
+            updateStatusFilter();
+        });
+
+        const span = document.createElement('span');
+        span.textContent = st.charAt(0).toUpperCase() + st.slice(1);
+
+        wrapper.appendChild(cb);
+        wrapper.appendChild(span);
+        el.appendChild(wrapper);
+    });
+
+    // トグルボタンを追加
+    let toggleBtn = document.getElementById('network-status-toggle');
+    if (!toggleBtn) {
+        toggleBtn = document.createElement('button');
+        toggleBtn.id = 'network-status-toggle';
+        toggleBtn.textContent = 'Status';
+        toggleBtn.title = 'Toggle status filters';
+        toggleBtn.style.position = 'fixed';
+        toggleBtn.style.top = '300px';
+        toggleBtn.style.right = '12px';
+        toggleBtn.style.zIndex = 10000;
+        toggleBtn.style.padding = '6px 8px';
+        toggleBtn.style.fontSize = '13px';
+        toggleBtn.style.borderRadius = '6px';
+        toggleBtn.style.border = '1px solid rgba(0,0,0,0.08)';
+        toggleBtn.style.background = 'white';
+        toggleBtn.addEventListener('click', () => {
+            el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'block' : 'none';
+        });
+        document.body.appendChild(toggleBtn);
+    }
+    // 最初は表示する
+    el.style.display = 'block';
+}
+
+// 現在のフィルタ状態を取得
+function getStatusFilterSet() {
+    const checked = Array.from(document.querySelectorAll('.status-filter-checkbox'))
+        .filter(cb => cb.checked)
+        .map(cb => cb.dataset.status);
+    return new Set(checked);
+}
+
+// グラフやテーブルのフィルタを更新
+function updateStatusFilter() {
+    const filterSet = getStatusFilterSet();
+    // グラフの場合
+    if (typeof updateGraph === 'function') {
+        window.visibleStatusSet = filterSet; // グローバルで保持
+        updateGraph();
+    }
+    // DataTableの場合
+    if (window.updateDataTable) {
+        window.visibleStatusSet = filterSet;
+        window.updateDataTable();
+    }
+}
+
+// updateGraph内でstatusフィルタを反映
+// 例: visibleNodes = allNodes.filter(n => visibleTypes.has(n.type) && visibleStatusSet.has(n.status));
+
+// 初期化時に呼び出し
+createStatusTooltip();
+window.visibleStatusSet = new Set(['pass', 'warning', 'error']);
