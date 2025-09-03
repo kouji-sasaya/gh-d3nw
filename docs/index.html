@@ -10,28 +10,42 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
     <!-- Added: DataTables Buttons CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+    <!-- Bootstrap Icons CDNをhead内に追加 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
   </head>
   <body>
     <!-- メニューバー -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
       <div class="container-fluid">
-        <a class="navbar-brand" href="#">d3.js Visualization : </a>
+        <a class="navbar-brand" href="#">
+          <i class="bi bi-diagram-3-fill"></i> d3.js Visualization :
+        </a>
         <div class="collapse navbar-collapse">
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             <li class="nav-item">
-              <a class="nav-link" href="#" id="menu-datatable">BusinessTable</a>
+              <a class="nav-link" href="#" id="menu-datatable">
+                <i class="bi bi-table"></i> BusinessTable
+              </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#" id="menu-table">CasualTable</a>
+              <a class="nav-link" href="#" id="menu-table">
+                <i class="bi bi-grid-3x3-gap"></i> CasualTable
+              </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#" id="menu-forcelayout">NetworkGraph2D</a> <!-- 名前変更 -->
+              <a class="nav-link" href="#" id="menu-forcelayout">
+                <i class="bi bi-diagram-3"></i> NetworkGraph2D
+              </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#" id="menu-force3d">NetworkGraph3D(N/A)</a> <!-- 新規追加 -->
+              <a class="nav-link" href="#" id="menu-force3d">
+                <i class="bi bi-graph-up"></i> NetworkGraph3D(N/A)
+              </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link active" href="#" id="menu-sunburst">Sunburst</a>
+              <a class="nav-link active" href="#" id="menu-sunburst">
+                <i class="bi bi-brightness-high"></i> Sunburst
+              </a>
             </li>
           </ul>
         </div>
