@@ -458,7 +458,6 @@ function updateGraph() {
     // label: users on right with smaller font, others centered
     nodeEnter.each(function(d) {
         if (d.type === "service") {
-            // すべてテキスト表示に統一
             d3.select(this).append("text")
                 .text(d => d.name)
                 .attr("text-anchor", "middle")
@@ -479,37 +478,8 @@ function updateGraph() {
                 .attr("font-size", "9px")
                 .attr("font-family", "Arial, sans-serif")
                 .attr("fill", "black");
-        } else if (d.type === "group") {
-            // groupノードは白背景＋枠線＋太字ラベル
-            d3.select(this).append("circle")
-                .attr("r", 18)
-                .attr("fill", "#fff")
-                .attr("stroke", "#888")
-                .attr("stroke-width", 2);
-            d3.select(this).append("text")
-                .text(d => d.name)
-                .attr("text-anchor", "middle")
-                .attr("dy", ".35em")
-                .attr("font-size", "12px")
-                .attr("font-family", "Arial, sans-serif")
-                .attr("font-weight", "bold")
-                .attr("fill", "black");
-        } else if (d.type === "team") {
-            // teamノードは水色＋太字ラベル
-            d3.select(this).append("circle")
-                .attr("r", 20)
-                .attr("fill", "#0097A7") // config.jsonの色
-                .attr("stroke", "#006978")
-                .attr("stroke-width", 2);
-            d3.select(this).append("text")
-                .text(d => d.name)
-                .attr("text-anchor", "middle")
-                .attr("dy", ".35em")
-                .attr("font-size", "12px")
-                .attr("font-family", "Arial, sans-serif")
-                .attr("font-weight", "bold")
-                .attr("fill", "black");
         } else {
+            // group, team, domain, project などはすべて同じデザイン
             d3.select(this).append("text")
                 .text(d => d.name)
                 .attr("text-anchor", "middle")

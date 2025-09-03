@@ -3,11 +3,11 @@
     "version": "1.0",
     "types": {
       "project": { "size": 300, "color": "#1976D2" },
-      "domain": { "size": 200, "color": "#FFA52C" },
-      "group": { "size": 100, "color": "#7E57C2" },
-      "service": { "size": 75, "color": "#FEC8D8" },
-      "team": { "size": 50, "color": "#FFFF41" },
-      "user": { "size": 25, "color": "#008018" }
+      "domain":  { "size": 200, "color": "#FBC02D" },
+      "group":   { "size": 100, "color": "#C62828" },
+      "service": { "size": 75,  "color": "#0097A7" },
+      "team":    { "size": 50,  "color": "#8E24AA" },
+      "user":    { "size": 25,  "color": "#388E3C" }
     }
   }
 }
