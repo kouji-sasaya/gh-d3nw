@@ -376,13 +376,22 @@ function stopStatusAnimation(nodeId) {
 
 // グラフの再構築（visibleTypes に応じて表示ノード／リンクを変更）
 function updateGraph() {
-    // 既存のアニメーションをすべて停止
     stopStatusBlinking();
 
-    // visible nodes & links
-    const visibleNodes = fullNodes.filter(n => visibleTypes.has(n.type));
+    // --- 修正ここから ---
+    const visibleNodes = fullNodes.filter(n => {
+        if (!visibleTypes.has(n.type)) return false;
+        if (n.type === 'user') {
+            // userのみstatusフィルタを適用
+            return window.visibleStatusSet && window.visibleStatusSet.has(n.status);
+        }
+        // user以外はstatus無視
+        return true;
+    });
+    // --- 修正ここまで ---
+
     const visibleNodeIds = new Set(visibleNodes.map(n => n.id));
-        const visibleLinks = fullLinks.filter(l => visibleNodeIds.has(l.source) && visibleNodeIds.has(l.target));
+    const visibleLinks = fullLinks.filter(l => visibleNodeIds.has(l.source) && visibleNodeIds.has(l.target));
 
     // simulation にノード／リンクを設定
         // normalize links so source/target are node objects when possible
