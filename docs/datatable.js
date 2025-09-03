@@ -43,15 +43,35 @@
                         return '';
                       }
                     }
-                  : d => Array.isArray(d) ? d.join(', ') : (d === null || d === undefined ? '' : String(d))
+                  : function(d) { return Array.isArray(d) ? d.join(', ') : (d === null || d === undefined ? '' : String(d)); }
             }));
 
-            // Helper: build a THEAD with a filter row
+
+            // Helper: build a THEAD with a filter row (status列はドロップダウン)
             function buildTheadHTML() {
+                // status/type列の値を抽出
+                let statusValues = [];
+                let typeValues = [];
+                if (keys.includes('status')) {
+                    statusValues = Array.from(new Set(dataArray.map(row => row.status).filter(v => v !== undefined && v !== null && v !== '')));
+                }
+                if (keys.includes('type')) {
+                    typeValues = Array.from(new Set(dataArray.map(row => row.type).filter(v => v !== undefined && v !== null && v !== '')));
+                }
                 let thead = '<thead><tr>';
                 keys.forEach(k => { thead += `<th>${k.charAt(0).toUpperCase() + k.slice(1)}</th>`; });
                 thead += '</tr><tr class="filters">';
-                keys.forEach((k, idx) => { thead += `<th><input class="filter-input" data-col="${idx}" type="text" placeholder="Filter ${k}"></th>`; });
+                keys.forEach((k, idx) => {
+                    if (k === 'status' && statusValues.length) {
+                        // status: ドロップダウン型フィルター
+                        thead += `<th><select class="filter-input" data-col="${idx}" style="width:100%;"><option value="">All</option>${statusValues.map(v => `<option value="${v}">${v}</option>`).join('')}</select></th>`;
+                    } else if (k === 'type' && typeValues.length) {
+                        // type: ドロップダウン型フィルター
+                        thead += `<th><select class="filter-input" data-col="${idx}" style="width:100%;"><option value="">All</option>${typeValues.map(v => `<option value="${v}">${v}</option>`).join('')}</select></th>`;
+                    } else {
+                        thead += `<th><input class="filter-input" data-col="${idx}" type="text" placeholder="Filter ${k}"></th>`;
+                    }
+                });
                 thead += '</tr></thead>';
                 return thead;
             }
@@ -288,12 +308,10 @@
                     initComplete: function() {
                         // Column-wise filtering: wire inputs to column search
                         const api = this.api();
-                        // Attach handlers to the THEAD inside the DataTable container so it works with
-                        // DataTables' header cloning when scrollX/scrollY is enabled.
                         const container = $(api.table().container());
                         container.find('thead tr.filters th').each(function(idx) {
-                            const input = $(this).find('input');
-                            input.off('.dtFilter').on('input.dtFilter', function() {
+                            const input = $(this).find('.filter-input');
+                            input.off('.dtFilter').on('input.dtFilter change.dtFilter', function() {
                                 const val = this.value;
                                 if (api.column(idx).search() !== val) {
                                     api.column(idx).search(val).draw();
