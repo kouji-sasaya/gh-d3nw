@@ -1,6 +1,5 @@
-// 3D network graph using three.js, showing all nodes from data.json
-// ノードの type ごとに config.json のサイズ・色を反映
-// status=error は赤で点滅、status=warningは黄で点滅
+// 球体を立体的にし、左上から光が当たるように表現
+// status=errorは赤で点滅、status=warningは黄で点滅
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.module.js';
 
@@ -43,6 +42,14 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
   canvasDiv.innerHTML = '';
   canvasDiv.appendChild(renderer.domElement);
 
+  // 立体感のためのライト（左上から）
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+  directionalLight.position.set(-100, 100, 100);
+  scene.add(directionalLight);
+
+  const ambientLight = new THREE.AmbientLight(0x404040, 0.7); // 少しだけ全体を明るく
+  scene.add(ambientLight);
+
   // Position nodes randomly in 3D space
   const nodeMeshes = [];
   nodes.forEach((node, i) => {
@@ -58,14 +65,14 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
     // status=errorは赤, warningは黄
     let material;
     if (node.status === 'error') {
-      material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+      material = new THREE.MeshPhongMaterial({ color: 0xff0000, shininess: 80 });
     } else if (node.status === 'warning') {
-      material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+      material = new THREE.MeshPhongMaterial({ color: 0xffff00, shininess: 80 });
     } else {
-      material = new THREE.MeshBasicMaterial({ color: color });
+      material = new THREE.MeshPhongMaterial({ color: color, shininess: 80 });
     }
 
-    const geometry = new THREE.SphereGeometry(size, 16, 16);
+    const geometry = new THREE.SphereGeometry(size, 32, 32); // より滑らかに
     const mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(node.x, node.y, node.z);
     mesh.userData = node;
@@ -115,7 +122,7 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
   // Animation loop & error/warning node blinking (slow blink)
   let blink = false;
   let lastBlinkTime = 0;
-  const blinkInterval = 500; // 0.5秒ごとに点滅
+  const blinkInterval = 250; // 0.25秒ごとに点滅
 
   function animate(now) {
     requestAnimationFrame(animate);
