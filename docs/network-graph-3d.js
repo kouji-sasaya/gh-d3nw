@@ -1,6 +1,6 @@
 // 3D network graph using three.js, showing all nodes from data.json
 // ノードの type ごとに config.json のサイズ・色を反映
-// status=error は赤でゆっくり点滅
+// status=error は赤で点滅、status=warningは黄で点滅
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.module.js';
 
@@ -55,10 +55,12 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
     const size = (typeConfig[type]?.size ?? 100) / 30; // サイズ調整
     const color = typeConfig[type]?.color ?? '#ffd700';
 
-    // status=errorは赤
+    // status=errorは赤, warningは黄
     let material;
     if (node.status === 'error') {
       material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    } else if (node.status === 'warning') {
+      material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
     } else {
       material = new THREE.MeshBasicMaterial({ color: color });
     }
@@ -110,15 +112,15 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
     camera.position.z = Math.max(30, Math.min(1000, camera.position.z));
   });
 
-  // Animation loop & error node blinking (slow blink)
+  // Animation loop & error/warning node blinking (slow blink)
   let blink = false;
   let lastBlinkTime = 0;
-  const blinkInterval = 1000; // 1秒ごとに点滅
+  const blinkInterval = 500; // 0.5秒ごとに点滅
 
   function animate(now) {
     requestAnimationFrame(animate);
 
-    // 点滅: errorノードのみ（1秒周期）
+    // 点滅: errorノードは赤⇔暗色, warningノードは黄⇔暗色（1秒周期）
     if (!lastBlinkTime) lastBlinkTime = now;
     if (now - lastBlinkTime > blinkInterval) {
       blink = !blink;
@@ -126,6 +128,8 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
       nodeMeshes.forEach(mesh => {
         if (mesh.userData.status === 'error') {
           mesh.material.color.set(blink ? 0xff0000 : 0x222222);
+        } else if (mesh.userData.status === 'warning') {
+          mesh.material.color.set(blink ? 0xffff00 : 0x222222);
         }
       });
     }
