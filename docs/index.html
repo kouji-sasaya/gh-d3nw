@@ -70,9 +70,7 @@
     <script>
       // JSファイルを動的に読み込む関数
       function loadScript(jsFile) {
-        // 既存のSVGやcanvas内容をクリア
         document.querySelector("#canvas").innerHTML = "<svg></svg>";
-        // キャッシュ対策で毎回異なるクエリを付与
         const cacheBuster = Date.now();
         fetch(jsFile + '?v=' + cacheBuster)
           .then(response => response.text())
@@ -85,7 +83,6 @@
           });
       }
 
-      // Table表示用の関数
       function showTable() {
         document.querySelector("#canvas").innerHTML = "<div id='table-container'></div>";
         document.querySelectorAll('script[data-tablejs]').forEach(s => s.parentNode.removeChild(s));
@@ -96,56 +93,62 @@
           script.setAttribute('data-tablejs', 'true');
           document.body.appendChild(script);
         }, 10);
-        setActiveMenu(document.getElementById('menu-table'));
       }
-
-      // 初期表示は Business Table
-      loadScript('datatable.js');
-      setActiveMenu(document.getElementById('menu-datatable'));
-
-      // Sunburst メニュークリックで切り替え
-      document.getElementById('menu-sunburst').addEventListener('click', function(e) {
-        e.preventDefault();
-        loadScript('sunburst.js');
-        setActiveMenu(this);
-      });
-      // BusinessTable メニュークリックで切り替え
-      document.getElementById('menu-datatable').addEventListener('click', function(e) {
-        e.preventDefault();
-        loadScript('datatable.js');
-        setActiveMenu(this);
-      });
-      // CasualTable メニュークリックで切り替え
-      document.getElementById('menu-table').addEventListener('click', function(e) {
-        e.preventDefault();
-        showTable();
-      });
-      // NetworkGraph2D
-      document.getElementById('menu-forcelayout').addEventListener('click', function(e) {
-        e.preventDefault();
-        loadScript('forcelayout.js');
-        setActiveMenu(this);
-      });
-
-      // NetworkGraph3D
-      // まだ実験中なので、クリックで白いキャンバスのみ表示
-      document.getElementById('menu-force3d').addEventListener('click', function(e) {
-        e.preventDefault();
-        document.querySelector("#canvas").innerHTML = "";
-        const blankDiv = document.createElement('div');
-        blankDiv.style.background = "#fff";
-        blankDiv.style.width = "100%";
-        blankDiv.style.height = "100%";
-        blankDiv.style.minHeight = "400px";
-        document.querySelector("#canvas").appendChild(blankDiv);
-        setActiveMenu(this);
-      });
 
       // アクティブメニューの切り替え
       function setActiveMenu(activeElem) {
         document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
         activeElem.classList.add('active');
       }
+
+      // メニューごとの描画処理
+      function showMenu(menuId) {
+        switch (menuId) {
+          case 'menu-datatable':
+            loadScript('datatable.js');
+            break;
+          case 'menu-table':
+            showTable();
+            break;
+          case 'menu-forcelayout':
+            loadScript('forcelayout.js');
+            break;
+          case 'menu-force3d':
+            document.querySelector("#canvas").innerHTML = "";
+            const blankDiv = document.createElement('div');
+            blankDiv.style.background = "#fff";
+            blankDiv.style.width = "100%";
+            blankDiv.style.height = "100%";
+            blankDiv.style.minHeight = "400px";
+            document.querySelector("#canvas").appendChild(blankDiv);
+            break;
+          case 'menu-sunburst':
+            loadScript('sunburst.js');
+            break;
+          default:
+            loadScript('datatable.js');
+        }
+        setActiveMenu(document.getElementById(menuId));
+      }
+
+      // メニュークリック時に選択状態を保存＆描画
+      document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          localStorage.setItem('selectedMenu', this.id);
+          showMenu(this.id);
+        });
+      });
+
+      // ページロード時に選択メニューを復元
+      window.addEventListener('DOMContentLoaded', function() {
+        const selected = localStorage.getItem('selectedMenu');
+        if (selected && document.getElementById(selected)) {
+          showMenu(selected);
+        } else {
+          showMenu('menu-datatable'); // デフォルト
+        }
+      });
     </script>
   </body>
 </html>
