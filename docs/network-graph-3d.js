@@ -1,4 +1,5 @@
 // Experimental: 3D network graph using three.js, showing all nodes from data.json
+// マウスホイールでズームイン・ズームアウト対応
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.module.js';
 
@@ -81,6 +82,15 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
       scene.rotation.x += dy * 0.005;
       prevX = e.clientX; prevY = e.clientY;
     }
+  });
+
+  // マウスホイールでズームイン・ズームアウト
+  renderer.domElement.addEventListener('wheel', e => {
+    e.preventDefault();
+    // e.deltaY > 0: zoom out, < 0: zoom in
+    camera.position.z += e.deltaY * 0.2;
+    // 最小/最大ズーム制限
+    camera.position.z = Math.max(30, Math.min(1000, camera.position.z));
   });
 
   // Animation loop
