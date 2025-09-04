@@ -74,18 +74,26 @@
 
     <script>
       // JSファイルを動的に読み込む関数
-      function loadScript(jsFile) {
+      function loadScript(jsFile, isModule = false) {
         document.querySelector("#canvas").innerHTML = "<svg></svg>";
         const cacheBuster = Date.now();
-        fetch(jsFile + '?v=' + cacheBuster)
-          .then(response => response.text())
-          .then(scriptContent => {
-            const executeScript = new Function(scriptContent);
-            executeScript();
-          })
-          .catch(error => {
-            console.error('Error loading ' + jsFile + ':', error);
-          });
+        if (isModule) {
+          // モジュールとして読み込む
+          const script = document.createElement('script');
+          script.type = 'module';
+          script.src = jsFile + '?v=' + cacheBuster;
+          document.body.appendChild(script);
+        } else {
+          fetch(jsFile + '?v=' + cacheBuster)
+            .then(response => response.text())
+            .then(scriptContent => {
+              const executeScript = new Function(scriptContent);
+              executeScript();
+            })
+            .catch(error => {
+              console.error('Error loading ' + jsFile + ':', error);
+            });
+        }
       }
 
       function showTable() {
@@ -146,13 +154,7 @@
             loadScript('forcelayout.js');
             break;
           case 'menu-force3d':
-            document.querySelector("#canvas").innerHTML = "";
-            const blankDiv = document.createElement('div');
-            blankDiv.style.background = "#fff";
-            blankDiv.style.width = "100%";
-            blankDiv.style.height = "100%";
-            blankDiv.style.minHeight = "400px";
-            document.querySelector("#canvas").appendChild(blankDiv);
+            loadScript('network-graph-3d.js', true); // ← type="module"で読み込む
             break;
           case 'menu-sunburst':
             loadScript('sunburst.js');
