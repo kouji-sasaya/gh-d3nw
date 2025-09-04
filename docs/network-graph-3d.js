@@ -1,5 +1,6 @@
 // Experimental: 3D network graph using three.js, showing all nodes from data.json
 // マウスホイールでズームイン・ズームアウト対応
+// status=errorは赤で点滅
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.module.js';
 
@@ -42,14 +43,22 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
   const nodeMaterial = new THREE.MeshBasicMaterial({ color: 0xffd700 });
 
   // Position nodes randomly in 3D space
+  const nodeMeshes = [];
   nodes.forEach((node, i) => {
     node.x = Math.random() * 180 - 90;
     node.y = Math.random() * 120 - 60;
     node.z = Math.random() * 180 - 90;
-    const mesh = new THREE.Mesh(nodeGeometry, nodeMaterial.clone());
+    let material;
+    if (node.status === 'error') {
+      material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    } else {
+      material = nodeMaterial.clone();
+    }
+    const mesh = new THREE.Mesh(nodeGeometry, material);
     mesh.position.set(node.x, node.y, node.z);
     mesh.userData = node;
     scene.add(mesh);
+    nodeMeshes.push(mesh);
   });
 
   // Draw links as lines
@@ -87,15 +96,30 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
   // マウスホイールでズームイン・ズームアウト
   renderer.domElement.addEventListener('wheel', e => {
     e.preventDefault();
-    // e.deltaY > 0: zoom out, < 0: zoom in
     camera.position.z += e.deltaY * 0.2;
-    // 最小/最大ズーム制限
     camera.position.z = Math.max(30, Math.min(1000, camera.position.z));
   });
 
-  // Animation loop
-  function animate() {
+  // Animation loop & error node blinking (slow blink)
+  let blink = false;
+  let lastBlinkTime = 0;
+  const blinkInterval = 500; // 0.5秒ごとに点滅
+
+  function animate(now) {
     requestAnimationFrame(animate);
+
+    // 点滅: errorノードのみ（1秒周期）
+    if (!lastBlinkTime) lastBlinkTime = now;
+    if (now - lastBlinkTime > blinkInterval) {
+      blink = !blink;
+      lastBlinkTime = now;
+      nodeMeshes.forEach(mesh => {
+        if (mesh.userData.status === 'error') {
+          mesh.material.color.set(blink ? 0xff0000 : 0x222222);
+        }
+      });
+    }
+
     renderer.render(scene, camera);
   }
   animate();
