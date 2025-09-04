@@ -47,12 +47,17 @@
                 <i class="bi bi-brightness-high"></i> Sunburst
               </a>
             </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#" id="menu-raw">
+                <i class="bi bi-file-earmark-code"></i> Raw
+              </a>
+            </li>
           </ul>
         </div>
       </div>
     </nav>
-    <!-- ここから下は既存のcanvasなど -->
-    <div id="canvas">
+    <!-- 画面いっぱいのRaw表示用エリア -->
+    <div id="canvas" style="width:100vw; height:calc(100vh - 56px); margin:0; padding:0; box-sizing:border-box;">
       <svg></svg>
     </div>
     <script src="https://d3js.org/d3.v6.min.js"></script>
@@ -101,6 +106,33 @@
         activeElem.classList.add('active');
       }
 
+      // Raw表示用
+      function showRaw() {
+        document.querySelector("#canvas").innerHTML =
+          `<pre id='raw-json'
+            style="
+              background:#222;
+              color:#ffd700;
+              padding:2vw;
+              border-radius:16px;
+              width:100vw;
+              height:calc(100vh - 56px);
+              margin:0;
+              box-sizing:border-box;
+              font-size:1.1em;
+              overflow:auto;
+              position:relative;
+            "></pre>`;
+        fetch('data.json?v=' + Date.now())
+          .then(res => res.text())
+          .then(text => {
+            document.getElementById('raw-json').textContent = text;
+          })
+          .catch(err => {
+            document.getElementById('raw-json').textContent = "Error loading data.json";
+          });
+      }
+
       // メニューごとの描画処理
       function showMenu(menuId) {
         switch (menuId) {
@@ -124,6 +156,9 @@
             break;
           case 'menu-sunburst':
             loadScript('sunburst.js');
+            break;
+          case 'menu-raw':
+            showRaw();
             break;
           default:
             loadScript('datatable.js');
