@@ -1,14 +1,19 @@
-// Experimental: 3D network graph using three.js, showing all nodes from data.json
-// マウスホイールでズームイン・ズームアウト対応
-// status=errorは赤で点滅
+// 3D network graph using three.js, showing all nodes from data.json
+// ノードの type ごとに config.json のサイズ・色を反映
+// status=error は赤でゆっくり点滅
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.module.js';
 
 (async function() {
+  // Fetch config.json
+  const configRes = await fetch('config.json?v=' + Date.now());
+  const configJson = await configRes.json();
+  const typeConfig = configJson.config.types;
+
   // Fetch all nodes from data.json
   const response = await fetch('data.json?v=' + Date.now());
   const allData = await response.json();
-  const nodes = allData; // すべてのノードを使用
+  const nodes = allData;
 
   // Generate links randomly for demo (since links field is empty)
   const links = [];
@@ -38,23 +43,28 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
   canvasDiv.innerHTML = '';
   canvasDiv.appendChild(renderer.domElement);
 
-  // Node geometry/material
-  const nodeGeometry = new THREE.SphereGeometry(2, 16, 16);
-  const nodeMaterial = new THREE.MeshBasicMaterial({ color: 0xffd700 });
-
   // Position nodes randomly in 3D space
   const nodeMeshes = [];
   nodes.forEach((node, i) => {
     node.x = Math.random() * 180 - 90;
     node.y = Math.random() * 120 - 60;
     node.z = Math.random() * 180 - 90;
+
+    // typeごとのサイズ・色
+    const type = node.type && typeConfig[node.type] ? node.type : 'project';
+    const size = (typeConfig[type]?.size ?? 100) / 30; // サイズ調整
+    const color = typeConfig[type]?.color ?? '#ffd700';
+
+    // status=errorは赤
     let material;
     if (node.status === 'error') {
       material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
     } else {
-      material = nodeMaterial.clone();
+      material = new THREE.MeshBasicMaterial({ color: color });
     }
-    const mesh = new THREE.Mesh(nodeGeometry, material);
+
+    const geometry = new THREE.SphereGeometry(size, 16, 16);
+    const mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(node.x, node.y, node.z);
     mesh.userData = node;
     scene.add(mesh);
@@ -103,7 +113,7 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
   // Animation loop & error node blinking (slow blink)
   let blink = false;
   let lastBlinkTime = 0;
-  const blinkInterval = 500; // 0.5秒ごとに点滅
+  const blinkInterval = 1000; // 1秒ごとに点滅
 
   function animate(now) {
     requestAnimationFrame(animate);
