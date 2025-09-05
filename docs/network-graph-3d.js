@@ -140,6 +140,39 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
     camera.position.z = Math.max(30, Math.min(1000, camera.position.z));
   });
 
+  // グラデーション背景をCanvasで作成
+  function createGradientTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    grad.addColorStop(0, '#222a44');
+    grad.addColorStop(1, '#0a0a1a');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    return new THREE.CanvasTexture(canvas);
+  }
+  scene.background = createGradientTexture();
+
+  // 星を追加する関数
+  function addStars(numStars = 200) {
+    const geometry = new THREE.BufferGeometry();
+    const positions = [];
+    for (let i = 0; i < numStars; i++) {
+      positions.push(
+        (Math.random() - 0.5) * 1000,
+        (Math.random() - 0.5) * 1000,
+        (Math.random() - 0.5) * 1000
+      );
+    }
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    const material = new THREE.PointsMaterial({ color: 0xffffff, size: 2 });
+    const stars = new THREE.Points(geometry, material);
+    scene.add(stars);
+  }
+  addStars();
+
   // Animation loop & error/warning node blinking (slow blink)
   let blink = false;
   let lastBlinkTime = 0;
