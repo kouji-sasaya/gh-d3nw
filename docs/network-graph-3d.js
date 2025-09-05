@@ -99,6 +99,9 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
     sprite.scale.set(canvas.width / 8, canvas.height / 8, 1); // サイズ調整
     sprite.position.set(node.x, node.y + size + 8, node.z); // 球体の上に表示
     scene.add(sprite);
+
+    // ノード生成時にlabelSpriteをmeshに紐付け
+    mesh.labelSprite = sprite;
   });
 
   // Draw links as lines
@@ -198,4 +201,66 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
     renderer.render(scene, camera);
   }
   animate();
+
+  // Raycasterでクリックノード検出
+  const raycaster = new THREE.Raycaster();
+  const mouse = new THREE.Vector2();
+  let selectedMesh = null;
+
+  renderer.domElement.addEventListener('click', (event) => {
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(nodeMeshes);
+
+    // 既存選択を戻す
+    if (selectedMesh) {
+      selectedMesh.scale.set(1, 1, 1);
+      selectedMesh.material.shininess = 80;
+      selectedMesh.material.emissive.setHex(0x000000);
+      // ラベルも通常サイズに
+      if (selectedMesh.labelSprite) selectedMesh.labelSprite.scale.set(selectedMesh.labelSprite.scale.x / 1.5, selectedMesh.labelSprite.scale.y / 1.5, 1);
+    }
+
+    if (intersects.length > 0) {
+      selectedMesh = intersects[0].object;
+      // 拡大・光沢・発光
+      selectedMesh.scale.set(1.5, 1.5, 1.5);
+      selectedMesh.material.shininess = 150;
+      selectedMesh.material.emissive.setHex(0x4444ff);
+      // ラベル拡大
+      if (selectedMesh.labelSprite) selectedMesh.labelSprite.scale.set(selectedMesh.labelSprite.scale.x * 1.5, selectedMesh.labelSprite.scale.y * 1.5, 1);
+      // 詳細パネル表示
+      showDetailPanel(selectedMesh.userData);
+    } else {
+      hideDetailPanel();
+      selectedMesh = null;
+    }
+  });
+
+  // 詳細パネル表示関数
+  function showDetailPanel(node) {
+    let panel = document.getElementById('node-detail-panel');
+    if (!panel) {
+      panel = document.createElement('div');
+      panel.id = 'node-detail-panel';
+      panel.style.position = 'fixed';
+      panel.style.top = '20px';
+      panel.style.right = '20px';
+      panel.style.background = '#fff';
+      panel.style.borderRadius = '8px';
+      panel.style.padding = '16px';
+      panel.style.boxShadow = '0 2px 8px #0002';
+      panel.style.zIndex = 2000;
+      document.body.appendChild(panel);
+    }
+    // nameも表示
+    panel.innerHTML = `<b>${node.name || node.id}</b><br>id: ${node.id}<br>name: ${node.name}<br>type: ${node.type}<br>status: ${node.status || 'normal'}`;
+    panel.style.display = 'block';
+  }
+  function hideDetailPanel() {
+    const panel = document.getElementById('node-detail-panel');
+    if (panel) panel.style.display = 'none';
+  }
 })();
