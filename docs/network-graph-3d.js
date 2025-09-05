@@ -72,12 +72,33 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
       material = new THREE.MeshPhongMaterial({ color: color, shininess: 80 });
     }
 
-    const geometry = new THREE.SphereGeometry(size, 32, 32); // より滑らかに
+    const geometry = new THREE.SphereGeometry(size, 32, 32);
     const mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(node.x, node.y, node.z);
     mesh.userData = node;
     scene.add(mesh);
     nodeMeshes.push(mesh);
+
+    // --- ノード名ラベルを追加 ---
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.font = '16px sans-serif';
+    const text = node.name || node.id;
+    const textWidth = ctx.measureText(text).width;
+    canvas.width = textWidth + 16;
+    canvas.height = 32;
+    ctx.font = '16px sans-serif';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
+    const sprite = new THREE.Sprite(spriteMaterial);
+    sprite.scale.set(canvas.width / 8, canvas.height / 8, 1); // サイズ調整
+    sprite.position.set(node.x, node.y + size + 8, node.z); // 球体の上に表示
+    scene.add(sprite);
   });
 
   // Draw links as lines
