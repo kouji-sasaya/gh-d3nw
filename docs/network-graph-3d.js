@@ -14,16 +14,24 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
   const allData = await response.json();
   const nodes = allData;
 
-  // Generate links randomly for demo (since links field is empty)
+  // 既存のランダムリンク生成は削除
+  // const links = [];
+  // for (let i = 1; i < nodes.length; i++) {
+  //   links.push({ source: nodes[i].id, target: nodes[i - 1].id });
+  // }
+
+  // --- 修正版: data.jsonのlinksを使う ---
   const links = [];
-  for (let i = 0; i < nodes.length; i++) {
-    if (i % 5 === 0 && i > 0) {
-      links.push({ source: nodes[i].id, target: nodes[i - 1].id });
+  nodes.forEach(node => {
+    if (Array.isArray(node.links)) {
+      node.links.forEach(targetId => {
+        // 重複リンク防止（source < target の場合のみ追加）
+        if (node.id !== targetId && !links.some(l => (l.source === targetId && l.target === node.id) || (l.source === node.id && l.target === targetId))) {
+          links.push({ source: node.id, target: targetId });
+        }
+      });
     }
-    if (i % 7 === 0 && i > 1) {
-      links.push({ source: nodes[i].id, target: nodes[i - 2].id });
-    }
-  }
+  });
 
   // Setup three.js scene
   const width = window.innerWidth;
@@ -105,6 +113,7 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
   });
 
   // Draw links as lines
+  const linkLines = [];
   links.forEach(link => {
     const sourceNode = nodes.find(n => n.id === link.source);
     const targetNode = nodes.find(n => n.id === link.target);
@@ -117,6 +126,7 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
       const material = new THREE.LineBasicMaterial({ color: 0x8888ff });
       const line = new THREE.Line(geometry, material);
       scene.add(line);
+      linkLines.push({ line, link });
     }
   });
 
@@ -181,8 +191,77 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
   let lastBlinkTime = 0;
   const blinkInterval = 250; // 0.25秒ごとに点滅
 
+  function applyForces() {
+    const repulsionStrength = 100; // 反発力の強さ（小さく）
+    const linkStrength = 0.03;     // 引力の強さ（少し強く）
+    const linkDistance = 25;       // リンクの理想距離（短く）
+
+    // 反発力（全ノード間）
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const a = nodes[i], b = nodes[j];
+        const dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z;
+        const distSq = dx*dx + dy*dy + dz*dz + 0.01;
+        const force = repulsionStrength / distSq;
+        const dir = new THREE.Vector3(dx, dy, dz).normalize();
+        a.x -= dir.x * force;
+        a.y -= dir.y * force;
+        a.z -= dir.z * force;
+        b.x += dir.x * force;
+        b.y += dir.y * force;
+        b.z += dir.z * force;
+      }
+    }
+
+    // 引力（リンクで繋がっているノード間）
+    links.forEach(link => {
+      const a = nodes.find(n => n.id === link.source);
+      const b = nodes.find(n => n.id === link.target);
+      if (!a || !b) return;
+      const dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z;
+      const dist = Math.sqrt(dx*dx + dy*dy + dz*dz) + 0.01;
+      const diff = dist - linkDistance;
+      const force = linkStrength * diff;
+      const dir = new THREE.Vector3(dx, dy, dz).normalize();
+      a.x += dir.x * force;
+      a.y += dir.y * force;
+      a.z += dir.z * force;
+      b.x -= dir.x * force;
+      b.y -= dir.y * force;
+      b.z -= dir.z * force;
+    });
+
+    // ノードメッシュとラベルの座標を更新
+    nodes.forEach((node, idx) => {
+      nodeMeshes[idx].position.set(node.x, node.y, node.z);
+      if (nodeMeshes[idx].labelSprite) {
+        const size = nodeMeshes[idx].geometry.parameters.radius;
+        nodeMeshes[idx].labelSprite.position.set(node.x, node.y + size + 8, node.z);
+      }
+    });
+
+    // --- 追加: リンクの座標を更新 ---
+    linkLines.forEach(({ line, link }) => {
+      const sourceNode = nodes.find(n => n.id === link.source);
+      const targetNode = nodes.find(n => n.id === link.target);
+      if (sourceNode && targetNode) {
+        const positions = line.geometry.attributes.position.array;
+        positions[0] = sourceNode.x;
+        positions[1] = sourceNode.y;
+        positions[2] = sourceNode.z;
+        positions[3] = targetNode.x;
+        positions[4] = targetNode.y;
+        positions[5] = targetNode.z;
+        line.geometry.attributes.position.needsUpdate = true;
+      }
+    });
+  }
+
   function animate(now) {
     requestAnimationFrame(animate);
+
+    // --- ここに追加 ---
+    applyForces();
 
     // 点滅: errorノードは赤⇔暗色, warningノードは黄⇔暗色（1秒周期）
     if (!lastBlinkTime) lastBlinkTime = now;
@@ -263,4 +342,48 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
     const panel = document.getElementById('node-detail-panel');
     if (panel) panel.style.display = 'none';
   }
+
+  // 隣接ノード間の距離を伸縮するキーボードイベント
+  document.addEventListener('keydown', (e) => {
+    if (!selectedMesh) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      const selectedId = selectedMesh.userData.id;
+      const delta = (e.key === 'ArrowRight') ? 10 : -10;
+      links.forEach(link => {
+        // 選択ノードがsourceまたはtargetの場合
+        if (link.source === selectedId || link.target === selectedId) {
+          const src = nodes.find(n => n.id === link.source);
+          const tgt = nodes.find(n => n.id === link.target);
+          // どちらが選択ノードか判定
+          let other;
+          if (link.source === selectedId) {
+            other = tgt;
+          } else {
+            other = src;
+          }
+          // 選択ノードから隣接ノードへの方向ベクトル
+          const dir = new THREE.Vector3(
+            other.x - selectedMesh.position.x,
+            other.y - selectedMesh.position.y,
+            other.z - selectedMesh.position.z
+          ).normalize();
+          // 隣接ノードを方向ベクトルに沿って移動
+          other.x += dir.x * delta;
+          other.y += dir.y * delta;
+          other.z += dir.z * delta;
+          // ノードメッシュとラベルも座標更新
+          const idx = nodes.indexOf(other);
+          if (idx >= 0) {
+            nodeMeshes[idx].position.set(other.x, other.y, other.z);
+            if (nodeMeshes[idx].labelSprite) {
+              const size = nodeMeshes[idx].geometry.parameters.radius;
+              nodeMeshes[idx].labelSprite.position.set(other.x, other.y + size + 8, other.z);
+            }
+          }
+        }
+      });
+      // リンクの座標も更新
+      // （animateループで自動更新していない場合は、ここで再描画処理を追加）
+    }
+  });
 })();
