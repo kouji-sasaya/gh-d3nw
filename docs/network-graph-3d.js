@@ -191,6 +191,21 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
   let lastBlinkTime = 0;
   const blinkInterval = 250; // 0.25秒ごとに点滅
 
+  let isPaused = false;
+
+  // 右クリックで一時停止
+  renderer.domElement.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    isPaused = true;
+  });
+
+  // 左クリックで再開
+  renderer.domElement.addEventListener('mousedown', (e) => {
+    if (e.button === 0) { // 左クリック
+      isPaused = false;
+    }
+  });
+
   function applyForces() {
     const repulsionStrength = 100; // 反発力の強さ（小さく）
     const linkStrength = 0.03;     // 引力の強さ（少し強く）
@@ -260,8 +275,10 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
   function animate(now) {
     requestAnimationFrame(animate);
 
-    // --- ここに追加 ---
-    applyForces();
+    // --- ここで物理演算の一時停止を制御 ---
+    if (!isPaused) {
+      applyForces();
+    }
 
     // 点滅: errorノードは赤⇔暗色, warningノードは黄⇔暗色（1秒周期）
     if (!lastBlinkTime) lastBlinkTime = now;
