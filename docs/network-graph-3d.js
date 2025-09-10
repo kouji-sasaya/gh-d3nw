@@ -53,7 +53,8 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
   // 立体感のためのライト（左上から）
   const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
   directionalLight.position.set(-100, 100, 100);
-  scene.add(directionalLight);
+  scene.add(directionalLight); // camera.addではなくscene.add
+  // scene.add(camera); ← cameraはsceneに追加（このままでOK）
 
   const ambientLight = new THREE.AmbientLight(0x404040, 0.7); // 少しだけ全体を明るく
   scene.add(ambientLight);
@@ -159,17 +160,18 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
     canvas.width = 512;
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
+    // より黒に近いグラデーション
     const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    grad.addColorStop(0, '#222a44');
-    grad.addColorStop(1, '#0a0a1a');
+    grad.addColorStop(0, '#111118'); // 上部: ほぼ黒
+    grad.addColorStop(1, '#000008'); // 下部: 完全な黒
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     return new THREE.CanvasTexture(canvas);
   }
   scene.background = createGradientTexture();
 
-  // 星を追加する関数
-  function addStars(numStars = 200) {
+  // 星を追加する関数（小さく・白色に）
+  function addStars(numStars = 300) {
     const geometry = new THREE.BufferGeometry();
     const positions = [];
     for (let i = 0; i < numStars; i++) {
@@ -180,7 +182,7 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
       );
     }
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    const material = new THREE.PointsMaterial({ color: 0xffffff, size: 2 });
+    const material = new THREE.PointsMaterial({ color: 0xffffff, size: 1.2 }); // 小さく
     const stars = new THREE.Points(geometry, material);
     scene.add(stars);
   }
@@ -275,7 +277,9 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
   function animate(now) {
     requestAnimationFrame(animate);
 
-    // --- ここで物理演算の一時停止を制御 ---
+    // 光源の位置を毎フレーム左上に固定（sceneのワールド座標）
+    directionalLight.position.set(-100, 100, 100);
+
     if (!isPaused) {
       applyForces();
     }
