@@ -3,7 +3,60 @@
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.module.js';
 
+// --- エレガントなロードオーバーレイを追加 ---
+function createLoadingOverlay() {
+  // スタイル
+  const style = document.createElement('style');
+  style.id = 'd3nw-loading-style';
+  style.textContent = `
+  #d3nw-loading-overlay{
+    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(180deg, rgba(8,10,16,0.55), rgba(4,6,12,0.7));
+    backdrop-filter: blur(6px);
+    z-index:9999;color:#eef2ff;font-family:Inter, system-ui, -apple-system, 'Hiragino Kaku Gothic ProN', 'メイリオ', sans-serif;
+  }
+  #d3nw-loading-card{display:flex;flex-direction:column;align-items:center;gap:14px;padding:18px 22px;border-radius:12px;box-shadow:0 6px 30px rgba(0,0,0,0.5);background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));}
+  /* 洗練された同心円スピナー */
+  .d3nw-spinner{width:56px;height:56px;position:relative}
+  .d3nw-ring{position:absolute;inset:0;border-radius:50%;border:4px solid transparent;border-top-color:rgba(150,170,255,0.95);animation:spin 1.25s linear infinite}
+  .d3nw-ring.r2{transform:scale(0.75);border-top-color:rgba(120,200,255,0.9);animation-duration:1s}
+  .d3nw-ring.r3{transform:scale(0.45);border-top-color:rgba(200,230,255,0.95);animation-duration:0.8s}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #d3nw-loading-text{font-size:14px;opacity:0.95;text-align:center;line-height:1.2}
+  #d3nw-loading-sub{font-size:12px;opacity:0.7;margin-top:-4px}
+  `;
+  document.head.appendChild(style);
+
+  // オーバーレイ要素
+  const overlay = document.createElement('div');
+  overlay.id = 'd3nw-loading-overlay';
+  overlay.innerHTML = `
+    <div id="d3nw-loading-card" role="status" aria-live="polite">
+      <div class="d3nw-spinner" aria-hidden="true">
+        <div class="d3nw-ring r1"></div>
+        <div class="d3nw-ring r2"></div>
+        <div class="d3nw-ring r3"></div>
+      </div>
+      <div id="d3nw-loading-text">3Dネットワークグラフを構築しています…</div>
+    </div>
+  `;
+  overlay.style.display = 'none';
+  document.body.appendChild(overlay);
+}
+
+function showLoader() {
+  const overlay = document.getElementById('d3nw-loading-overlay');
+  if (overlay) overlay.style.display = 'flex';
+}
+function hideLoader() {
+  const overlay = document.getElementById('d3nw-loading-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
 (async function() {
+  // 初期化: オーバーレイがまだなければ作る & 表示
+  if (!document.getElementById('d3nw-loading-overlay')) createLoadingOverlay();
+  showLoader();
   // Fetch config.json
   const configRes = await fetch('config.json?v=' + Date.now());
   const configJson = await configRes.json();
@@ -191,6 +244,7 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
   // Animation loop & error/warning node blinking (slow blink)
   let blink = false;
   let lastBlinkTime = 0;
+  let _d3nw_firstFrameRendered = false;
   const blinkInterval = 250; // 0.25秒ごとに点滅
 
   let isPaused = false;
@@ -292,6 +346,14 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
     }
 
     renderer.render(scene, camera);
+    // 初回レンダリング後にローダーを非表示にする
+    if (!_d3nw_firstFrameRendered) {
+      _d3nw_firstFrameRendered = true;
+      // 少しだけ余裕を持たせてスムーズに消す
+      setTimeout(() => {
+        hideLoader();
+      }, 120);
+    }
   }
   animate();
 

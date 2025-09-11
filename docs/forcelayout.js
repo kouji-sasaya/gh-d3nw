@@ -2,6 +2,42 @@
 d3.select('#canvas svg').style('display', 'block');
 d3.select('#table-container').style('display', 'none');
 
+// --- 2Dネットワーク用エレガントなロードオーバーレイ ---
+function createLoadingOverlay2D() {
+    const style = document.createElement('style');
+    style.id = 'd3nw-loading-style-2d';
+    style.textContent = `
+    #d3nw-loading-overlay-2d{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg, rgba(12,14,20,0.55), rgba(6,8,12,0.75));backdrop-filter: blur(5px);z-index:99990;color:#eef2ff;font-family:Inter, system-ui, -apple-system, 'Hiragino Kaku Gothic ProN', 'メイリオ', sans-serif}
+    #d3nw-loading-card-2d{display:flex;flex-direction:column;align-items:center;gap:12px;padding:14px 18px;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,0.45);background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.005));}
+    .d3nw-spinner-2d{width:48px;height:48px;position:relative}
+    .d3nw-ring-2d{position:absolute;inset:0;border-radius:50%;border:4px solid transparent;border-top-color:rgba(170,200,255,0.95);animation:spin2d 1.1s linear infinite}
+    .d3nw-ring-2d.r2{transform:scale(0.75);border-top-color:rgba(140,190,255,0.9);animation-duration:0.9s}
+    @keyframes spin2d{to{transform:rotate(360deg)}}
+    #d3nw-loading-text-2d{font-size:14px;opacity:0.95;text-align:center}
+    `;
+    document.head.appendChild(style);
+
+    const overlay = document.createElement('div');
+    overlay.id = 'd3nw-loading-overlay-2d';
+    overlay.innerHTML = `
+        <div id="d3nw-loading-card-2d" role="status" aria-live="polite">
+            <div class="d3nw-spinner-2d" aria-hidden="true">
+                <div class="d3nw-ring-2d r1"></div>
+                <div class="d3nw-ring-2d r2"></div>
+            </div>
+            <div id="d3nw-loading-text-2d">2Dネットワークグラフを構築しています…</div>
+        </div>
+    `;
+    overlay.style.display = 'none';
+    document.body.appendChild(overlay);
+}
+
+function showLoader2D() {
+    if (!document.getElementById('d3nw-loading-overlay-2d')) createLoadingOverlay2D();
+    const o = document.getElementById('d3nw-loading-overlay-2d'); if (o) o.style.display = 'flex';
+}
+function hideLoader2D() { const o = document.getElementById('d3nw-loading-overlay-2d'); if (o) o.style.display = 'none'; }
+
 // --- スクロールバーを #canvas の直後に描画 ---
 let scrollbarContainer = document.getElementById('network-scrollbar-container');
 if (!scrollbarContainer) {
@@ -191,6 +227,8 @@ function stopStatusBlinking() {
 }
 
 // データと設定を同時に取得
+// 表示前にローダーを出す
+showLoader2D();
 Promise.all([
   fetch('data.json?' + Date.now()).then(res => res.json()), // ←キャッシュ回避
   fetch('config.json?' + Date.now()).then(res => res.json()) // ←キャッシュ回避
@@ -250,6 +288,8 @@ Promise.all([
 
     // 初回描画
     updateGraph();
+    // 描画が開始されたらローダーを非表示にする（安全に）
+    setTimeout(() => { hideLoader2D(); }, 120);
 
     // キー操作: 矢印で linkDistance 操作（既存）とパン系は toolbar で操作済み
 })
@@ -282,6 +322,7 @@ Promise.all([
     linkGroup = container.append("g").attr("class", "links");
     nodeGroup = container.append("g").attr("class", "nodes");
     updateGraph();
+    setTimeout(() => { hideLoader2D(); }, 120);
 });
 
 // アニメーション関数：エラー・警告ノードの点滅・拡大縮小
