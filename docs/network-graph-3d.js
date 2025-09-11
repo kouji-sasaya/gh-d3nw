@@ -195,17 +195,10 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
 
   let isPaused = false;
 
-  // 右クリックで一時停止
+  // 右クリックで一時停止・再開（トグル動作に変更）
   renderer.domElement.addEventListener('contextmenu', (e) => {
     e.preventDefault();
-    isPaused = true;
-  });
-
-  // 左クリックで再開
-  renderer.domElement.addEventListener('mousedown', (e) => {
-    if (e.button === 0) { // 左クリック
-      isPaused = false;
-    }
+    isPaused = !isPaused; // ←トグル
   });
 
   function applyForces() {
