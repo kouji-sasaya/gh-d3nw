@@ -163,10 +163,16 @@
       .linkDirectionalParticles(0)
       .backgroundColor('#07080a')
       .onNodeClick(node => {
-        // 中央へ移動
-        const distance = 120;
-        const distRatio = 1 + distance/Math.hypot(node.x||0, node.y||0, node.z||0);
-        GraphInstance.cameraPosition({ x: (node.x||0)*distRatio, y: (node.y||0)*distRatio, z: (node.z||0)*distRatio }, node, 4000);
+        // Aim at node from outside it (sample behaviour): compute a position
+        // a fixed distance away from the node and smoothly move the camera there.
+        const distance = 40;
+        const distRatio = 1 + distance / Math.hypot(node.x || 0, node.y || 0, node.z || 0);
+        const newPos = (node.x || node.y || node.z)
+          ? { x: (node.x || 0) * distRatio, y: (node.y || 0) * distRatio, z: (node.z || 0) * distRatio }
+          : { x: 0, y: 0, z: distance }; // if node at origin, place camera at +z distance
+
+        // 3000 ms transition to the new position and look at the node
+        GraphInstance.cameraPosition(newPos, node, 3000);
       });
 
     // --- UI: ラベル表示切替とノードサイズ倍率 ---
