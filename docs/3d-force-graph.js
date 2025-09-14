@@ -125,6 +125,17 @@
       return;
     }
 
+    // OrbitControls を動的に読み込む（three.js が必要）
+    try {
+      if (typeof THREE !== 'undefined' && typeof THREE.OrbitControls === 'undefined') {
+        // three のモジュール版ではなく UMD の OrbitControls を直接追加するためのスクリプト
+        await loadScript('https://cdn.jsdelivr.net/npm/three@0.153.0/examples/js/controls/OrbitControls.js');
+        // OrbitControls は THREE.OrbitControls として利用可能になる
+      }
+    } catch (err) {
+      console.warn('OrbitControls の読み込みに失敗しました:', err);
+    }
+
   // 4) コンテナ作成 — 既存の #canvas があればそこを使う
   let canvasEl = document.getElementById('canvas');
   if (!canvasEl) canvasEl = document.body;
@@ -138,7 +149,7 @@
   container.style.position = 'relative';
   canvasEl.appendChild(container);
 
-    // 5) グラフ初期化
+  // 5) グラフ初期化
     // ForceGraph3D は UMD で global に登録されている想定
     const Graph = (typeof ForceGraph3D !== 'undefined') ? ForceGraph3D : window.ForceGraph3D;
     if (!Graph) {
@@ -158,25 +169,258 @@
         GraphInstance.cameraPosition({ x: (node.x||0)*distRatio, y: (node.y||0)*distRatio, z: (node.z||0)*distRatio }, node, 4000);
       });
 
+    // --- UI: ラベル表示切替とノードサイズ倍率 ---
+    (function setupUI() {
+      const ui = document.createElement('div');
+      ui.style.position = 'absolute';
+      ui.style.right = '12px';
+      ui.style.top = '12px';
+      ui.style.zIndex = 10000;
+      ui.style.background = 'rgba(12,14,20,0.6)';
+      ui.style.color = '#eef2ff';
+      ui.style.padding = '10px 12px';
+      ui.style.borderRadius = '10px';
+      ui.style.fontFamily = 'Inter, system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "メイリオ", sans-serif';
+      ui.style.fontSize = '13px';
+
+      ui.innerHTML = `
+        <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <input type='checkbox' id='d3fg-label-toggle' /> ラベル表示
+        </label>
+        <label style="display:block">ノードサイズ倍率: <span id='d3fg-size-val'>1.0</span>
+          <input type='range' id='d3fg-size-range' min='0.4' max='2.5' step='0.05' value='1.0' style='width:160px'>
+        </label>
+        <hr style='border:none;border-top:1px solid rgba(255,255,255,0.06);margin:8px 0'>
+        <label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <input type='checkbox' id='d3fg-lod-toggle' /> ラベルLODを有効
+        </label>
+        <label style="display:block">LOD距離閾値: <span id='d3fg-lod-val'>120</span>
+          <input type='range' id='d3fg-lod-range' min='20' max='800' step='5' value='120' style='width:160px'>
+        </label>
+        <label style="display:block;margin-top:6px">LOD更新間隔(ms): <span id='d3fg-lod-interval-val'>200</span>
+          <input type='range' id='d3fg-lod-interval' min='50' max='1000' step='25' value='200' style='width:160px'>
+        </label>
+      `;
+      container.appendChild(ui);
+
+      const chk = ui.querySelector('#d3fg-label-toggle');
+      const range = ui.querySelector('#d3fg-size-range');
+      const val = ui.querySelector('#d3fg-size-val');
+      const lodToggle = ui.querySelector('#d3fg-lod-toggle');
+      const lodRange = ui.querySelector('#d3fg-lod-range');
+      const lodVal = ui.querySelector('#d3fg-lod-val');
+      const lodIntervalEl = ui.querySelector('#d3fg-lod-interval');
+      const lodIntervalVal = ui.querySelector('#d3fg-lod-interval-val');
+
+      // 設定を localStorage から復元
+      const savedLabel = localStorage.getItem('d3fg_label_visible');
+      const savedScale = localStorage.getItem('d3fg_size_multiplier');
+      const savedLODEn = localStorage.getItem('d3fg_lod_enabled');
+      const savedLODDist = localStorage.getItem('d3fg_lod_distance');
+      const savedLODInterval = localStorage.getItem('d3fg_lod_interval');
+
+      if (savedLabel !== null) chk.checked = savedLabel === '1'; else chk.checked = true;
+      if (savedScale !== null) { range.value = savedScale; val.textContent = parseFloat(savedScale).toFixed(2); }
+      if (savedLODEn !== null) lodToggle.checked = savedLODEn === '1'; else lodToggle.checked = true;
+      if (savedLODDist !== null) { lodRange.value = savedLODDist; lodVal.textContent = parseFloat(savedLODDist).toFixed(0); }
+      if (savedLODInterval !== null) { lodIntervalEl.value = savedLODInterval; lodIntervalVal.textContent = parseInt(savedLODInterval,10); }
+
+      function applyLabelVisibility(visible) {
+        // nodes 配列に保存された __labelSprite を探して表示/非表示
+        try {
+          GraphInstance.graphData().nodes.forEach(n => {
+            if (n && n.__labelSprite) n.__labelSprite.visible = !!visible;
+          });
+        } catch (e){}
+      }
+
+      function applySizeMultiplier(mult) {
+        // 各ノードの three オブジェクトを見つけて scale を掛ける
+        try {
+          GraphInstance.graphData().nodes.forEach(n => {
+            const g = n && n.__threeObj;
+            if (!g) return;
+            // meshは group.children[0]
+            const mesh = g.children && g.children[0];
+            if (mesh && mesh.scale) mesh.scale.setScalar(mult);
+            // ラベルは group.children[1]
+            const label = n.__labelSprite;
+            if (label && label.scale) label.scale.setScalar(mult);
+          });
+        } catch (e){}
+      }
+
+      // 初期適用
+      applyLabelVisibility(chk.checked);
+      applySizeMultiplier(parseFloat(range.value));
+
+      // LOD 適用関数
+      function updateLabelsLOD() {
+        try {
+          const lodEnabled = !!lodToggle.checked;
+          const threshold = parseFloat(lodRange.value) || 120;
+          const cam = GraphInstance.camera();
+          if (!cam) return;
+          const nodesList = GraphInstance.graphData().nodes || [];
+          for (let i = 0; i < nodesList.length; i++) {
+            const n = nodesList[i];
+            const label = n && n.__labelSprite;
+            if (!label) continue;
+            // get node world position: prefer threeObj group position if available
+            let nx = 0, ny = 0, nz = 0;
+            const g = n.__threeObj;
+            if (g && g.position) {
+              nx = g.position.x; ny = g.position.y; nz = g.position.z;
+            } else if (typeof n.x !== 'undefined') {
+              nx = n.x; ny = n.y; nz = n.z;
+            }
+            const dx = cam.position.x - nx;
+            const dy = cam.position.y - ny;
+            const dz = cam.position.z - nz;
+            const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+            // visible only when label toggle is on AND (LOD disabled OR within threshold)
+            label.visible = chk.checked && (!lodEnabled || dist <= threshold);
+          }
+        } catch (e) {}
+      }
+
+      // LOD UI イベント
+      lodToggle.addEventListener('change', () => {
+        localStorage.setItem('d3fg_lod_enabled', lodToggle.checked ? '1' : '0');
+        // 即座に反映
+        updateLabelsLOD();
+      });
+      lodRange.addEventListener('input', () => {
+        lodVal.textContent = parseFloat(lodRange.value).toFixed(0);
+        localStorage.setItem('d3fg_lod_distance', lodRange.value);
+        updateLabelsLOD();
+      });
+
+      // per-frame loop to update LOD (throttled by interval)
+      let lastLODUpdate = 0;
+      function lodLoop(now) {
+        try {
+          const interval = parseInt(lodIntervalEl.value, 10) || 200;
+          if (!lastLODUpdate || (performance.now() - lastLODUpdate) >= interval) {
+            updateLabelsLOD();
+            lastLODUpdate = performance.now();
+          }
+        } catch (e) {}
+        requestAnimationFrame(lodLoop);
+      }
+      requestAnimationFrame(lodLoop);
+
+      // LOD interval UI
+      lodIntervalEl.addEventListener('input', () => {
+        const v = parseInt(lodIntervalEl.value, 10);
+        lodIntervalVal.textContent = v;
+        localStorage.setItem('d3fg_lod_interval', String(v));
+      });
+
+      chk.addEventListener('change', () => {
+        localStorage.setItem('d3fg_label_visible', chk.checked ? '1' : '0');
+        applyLabelVisibility(chk.checked);
+      });
+
+      range.addEventListener('input', () => {
+        const m = parseFloat(range.value);
+        val.textContent = m.toFixed(2);
+        localStorage.setItem('d3fg_size_multiplier', range.value);
+        applySizeMultiplier(m);
+      });
+
+      // 新規ノードが追加される可能性があるので、GraphInstance の graphData 更新時にも適用
+      const origGraphData = GraphInstance.graphData;
+      GraphInstance.graphData = function(data) {
+        const res = origGraphData.apply(this, arguments);
+        // 少し遅延して UI 値を再適用
+        setTimeout(() => {
+          applyLabelVisibility(chk.checked);
+          applySizeMultiplier(parseFloat(range.value));
+        }, 50);
+        return res;
+      };
+    })();
+
     // node オブジェクトをカスタムで小さな球にする（見た目の安定のため）
     try {
       const spriteTexture = null; // placeholder if needed
+      // helper: create a sprite with text drawn on canvas
+      function makeLabelSprite(text, color) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const fontSize = 48;
+        ctx.font = `bold ${fontSize}px sans-serif`;
+        const padding = 12;
+        const metrics = ctx.measureText(text);
+        const textWidth = Math.ceil(metrics.width);
+        canvas.width = textWidth + padding * 2;
+        canvas.height = fontSize + padding * 2;
+        // redraw with proper size
+        ctx.font = `bold ${fontSize}px sans-serif`;
+        // background (slightly translucent)
+        ctx.fillStyle = 'rgba(8,10,16,0.6)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // text
+        ctx.fillStyle = color || '#ffffff';
+        ctx.textBaseline = 'top';
+        ctx.fillText(text, padding, padding);
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.minFilter = THREE.LinearFilter;
+        const mat = new THREE.SpriteMaterial({ map: tex, depthTest: false });
+        const sprite = new THREE.Sprite(mat);
+        // scale down to reasonable world units; will be adjusted per-node
+        sprite.scale.set(canvas.width / 20, canvas.height / 20, 1);
+        sprite.renderOrder = 9999;
+        return sprite;
+      }
+
       GraphInstance.nodeThreeObject(node => {
-  // config.json の size を視認性の良い半径にスケーリングして使用
-  // 大きさのダイナミクスを落ち着かせるため sqrt スケールを採用
-  const rawSize = node._size || 50;
-  // tunable constants: a (min radius), b (scale factor)
-  const a = 1.2;
-  const b = 0.55; // 調整すると全体の大きさが増減します
-  const baseSize = Math.max(0.9, a + b * Math.sqrt(rawSize));
-  const geometry = new THREE.SphereGeometry(baseSize, 12, 12);
+        // config.json の size を視認性の良い半径にスケーリングして使用
+        const rawSize = node._size || 50;
+        const a = 1.2;
+        const b = 0.55;
+        const baseSize = Math.max(0.9, a + b * Math.sqrt(rawSize));
+
+        const geometry = new THREE.SphereGeometry(baseSize, 12, 12);
         const colorHex = node._color || '#ffffff';
         const material = new THREE.MeshStandardMaterial({ color: new THREE.Color(colorHex), roughness: 0.6, metalness: 0.1 });
-        const sprite = new THREE.Mesh(geometry, material);
-        // ステータスに応じた光るエフェクト
-        if (node.status === 'error') sprite.material.emissive = new THREE.Color(0xff4444);
-        if (node.status === 'warning') sprite.material.emissive = new THREE.Color(0xffcc44);
-        return sprite;
+        const mesh = new THREE.Mesh(geometry, material);
+        if (node.status === 'error') mesh.material.emissive = new THREE.Color(0xff4444);
+        if (node.status === 'warning') mesh.material.emissive = new THREE.Color(0xffcc44);
+
+        // Group に mesh とラベル sprite をまとめる
+        const group = new THREE.Group();
+        group.add(mesh);
+
+        // ラベルは常時表示（スプライト）
+        const label = makeLabelSprite(node.name || node.id, '#eef2ff');
+        // position label slightly above the node
+        label.position.set(0, baseSize + 0.8, 0);
+        // scale label relative to node size for可読性
+        const scaleFactor = Math.max(0.7, baseSize / 2.5);
+        label.scale.multiplyScalar(scaleFactor);
+        group.add(label);
+
+        // 保存して hover で操作できるようにする
+        node.__labelSprite = label;
+        node.__threeObj = group;
+
+        return group;
+      });
+
+      // hover でラベルを拡大表示する
+      let prevHover = null;
+      GraphInstance.onNodeHover(node => {
+        if (prevHover && prevHover.__labelSprite) {
+          // 元のスケールに戻す
+          prevHover.__labelSprite.scale.setScalar(1.0);
+        }
+        if (node && node.__labelSprite) {
+          // 拡大: スプライトの現在の scale に対して倍率をかける
+          node.__labelSprite.scale.multiplyScalar(1.8);
+        }
+        prevHover = node;
       });
 
       // 简単な環境光と点光源
@@ -185,6 +429,27 @@
       const light = new THREE.DirectionalLight(0xffffff, 0.6);
       light.position.set(50, 50, 50);
       threeScene.add(light);
+      // OrbitControls が読み込まれていれば、Graph のカメラ/renderer を使って接続
+      try {
+        const threeRenderer = GraphInstance.renderer();
+        const threeCamera = GraphInstance.camera();
+        if (THREE && THREE.OrbitControls && threeRenderer && threeCamera) {
+          const controls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement);
+          controls.enableDamping = true;
+          controls.dampingFactor = 0.07;
+          controls.rotateSpeed = 0.6;
+          controls.zoomSpeed = 1.0;
+          controls.panSpeed = 0.8;
+          // GraphInstance の tick で controls.update を呼ぶ
+          const origTick = GraphInstance._tick;
+          GraphInstance._tick = function() {
+            try { controls.update(); } catch (e) {}
+            if (origTick) origTick.apply(this, arguments);
+          };
+        }
+      } catch (e) {
+        console.warn('OrbitControls の初期化に失敗しました', e);
+      }
     } catch (err) {
       console.warn('カスタム nodeThreeObject / lighting 作成で警告', err);
     }
