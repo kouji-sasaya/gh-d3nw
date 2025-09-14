@@ -154,7 +154,8 @@
             loadScript('forcelayout.js');
             break;
           case 'menu-force3d':
-            loadScript('network-graph-3d.js', true); // ← type="module"で読み込む
+            // 3d-force-graph を使う新しい実装を読み込む
+            loadScript('3d-force-graph.js');
             break;
           case 'menu-sunburst':
             loadScript('sunburst.js');

@@ -247,7 +247,8 @@ function hideLoader() {
   let _d3nw_firstFrameRendered = false;
   const blinkInterval = 250; // 0.25秒ごとに点滅
 
-  let isPaused = false;
+  // 初期は一時停止しておく（右クリックで再生）
+  let isPaused = true;
 
   // 右クリックで一時停止・再開（トグル動作に変更）
   renderer.domElement.addEventListener('contextmenu', (e) => {
