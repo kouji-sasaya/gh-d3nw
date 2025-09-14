@@ -487,16 +487,15 @@
         const mesh = new THREE.Mesh(geometry, material);
         // status による色付けと発光設定
         if (node.status === 'error') {
-          // error: make the red deeper/saturated so it reads as a stronger red core
-          const errColor = new THREE.Color(0xC62828); // deeper, blood-red tone
+          // error: use Google's brand red for color and emissive
+          const errColor = new THREE.Color(0xEA4335); // Google red
           mesh.material.color = errColor;
           mesh.material.emissive = errColor;
-          // keep emissive strong but slightly reduced from earlier extreme to avoid washout
           try { if (typeof mesh.material.emissiveIntensity !== 'undefined') mesh.material.emissiveIntensity = 6.0; } catch(e){}
           try { mesh.material.needsUpdate = true; } catch(e){}
         } else if (node.status === 'warning') {
-          // warning: keep yellow but tone down the emissive strength so it doesn't overpower errors
-          const warnColor = new THREE.Color(0xFFEB3B); // warm yellow
+          // warning: use Google's brand yellow for color and emissive
+          const warnColor = new THREE.Color(0xFBBC05); // Google yellow
           mesh.material.color = warnColor;
           mesh.material.emissive = warnColor;
           try { if (typeof mesh.material.emissiveIntensity !== 'undefined') mesh.material.emissiveIntensity = 1.0; } catch(e){}
@@ -527,15 +526,15 @@
             const c = (col && col.isColor) ? col : new THREE.Color(col);
             const r = Math.floor(c.r * 255), g = Math.floor(c.g * 255), b = Math.floor(c.b * 255);
             const grad = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
-            // stronger white core, then solid color, then softer falloff
-            grad.addColorStop(0.0, `rgba(255,255,255,1)`);
-            grad.addColorStop(0.20, `rgba(${r},${g},${b},1)`);
-            grad.addColorStop(0.45, `rgba(${r},${g},${b},0.7)`);
+            // stronger white core (kept very subtle), then solid color (reduced alpha), then softer falloff
+            grad.addColorStop(0.0, `rgba(255,255,255,0.12)`);
+            grad.addColorStop(0.20, `rgba(${r},${g},${b},0.85)`);
+            grad.addColorStop(0.45, `rgba(${r},${g},${b},0.55)`);
             grad.addColorStop(1.0, `rgba(${r},${g},${b},0)`);
             ctx.fillStyle = grad; ctx.fillRect(0,0,size,size);
             const tex = new THREE.CanvasTexture(canvas);
             tex.minFilter = THREE.LinearFilter;
-            const mat = new THREE.SpriteMaterial({ map: tex, blending: THREE.AdditiveBlending, depthTest: false, transparent: true, opacity: 0.85 });
+            const mat = new THREE.SpriteMaterial({ map: tex, blending: THREE.AdditiveBlending, depthTest: false, transparent: true, opacity: 0.6 });
             const spr = new THREE.Sprite(mat);
             const s = Math.max(1, scaleFactor);
             // scale up slightly to make halo larger and softer
@@ -558,7 +557,8 @@
             const r = Math.floor(c.r * 255), g = Math.floor(c.g * 255), b = Math.floor(c.b * 255);
             const grad = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
             // allow caller to reduce inner alpha so the core isn't overly bright
-            const ia = (typeof innerAlpha === 'number') ? Math.max(0, Math.min(1, innerAlpha)) : 1.0;
+            // default to a reduced inner alpha to avoid a blinding center when innerAlpha isn't provided
+            const ia = (typeof innerAlpha === 'number') ? Math.max(0, Math.min(1, innerAlpha)) : 0.25;
             // tight core (use ia), then colored glow, then fade
             grad.addColorStop(0.0, `rgba(${r},${g},${b},${ia})`);
             grad.addColorStop(0.18, `rgba(${r},${g},${b},${Math.max(0.6, ia * 0.98)})`);
@@ -568,8 +568,8 @@
             ctx.fillStyle = grad; ctx.fillRect(0,0,size,size);
             const tex = new THREE.CanvasTexture(canvas);
             tex.minFilter = THREE.LinearFilter;
-            // use NormalBlending for the core so the center doesn't additively brighten the scene
-            const mat = new THREE.SpriteMaterial({ map: tex, blending: THREE.NormalBlending, depthTest: false, transparent: true, opacity: 0.9 });
+            // use NormalBlending for the core; reduce opacity so the center is even more subdued
+            const mat = new THREE.SpriteMaterial({ map: tex, blending: THREE.NormalBlending, depthTest: false, transparent: true, opacity: 0.28 });
             const spr = new THREE.Sprite(mat);
             const s = Math.max(1, scaleFactor);
             spr.scale.set(s * 0.8, s * 0.8, 1);
@@ -586,44 +586,22 @@
         // status === 'error' または status === 'warning' の場合、ラベルとノード本体をレイヤー1に設定して選択的ブルームを適用
         try {
           if (node.status === 'error' || node.status === 'warning') {
-              // mark as bloom target
-              try { mesh.userData.bloom = true; } catch(e){}
-              try { label.userData.bloom = true; } catch(e){}
-              if (mesh.layers) mesh.layers.enable(1);
-              if (label.layers) label.layers.enable(1);
+              // Do NOT mark the mesh or label as bloom targets; keep bloom limited to the outer glow sprite only.
               // add an additive glow sprite behind the node to emphasize halo
               try {
-                // choose glow color: use a deeper red for errors, yellow for warnings
-                const glowColor = (node.status === 'error') ? new THREE.Color(0xC62828) : new THREE.Color(0xFFEB3B);
-                // tone down warning halo size/intensity so it doesn't drown out errors
-                const glowScale = (node.status === 'error') ? baseSize * 4.0 : baseSize * 2.0;
+                // choose glow color: Google's red for errors, Google's yellow for warnings
+                const glowColor = (node.status === 'error') ? new THREE.Color(0xEA4335) : new THREE.Color(0xFBBC05);
+                // Use the same glow scale for both statuses
+                const glowScale = baseSize * 4.0;
                 const glow = makeGlowSprite(glowColor, glowScale);
                 if (glow) {
                   glow.position.set(0, 0, 0);
+                  // mark only the glow sprite for bloom and enable bloom layer
                   try { glow.userData.bloom = true; } catch(e){}
                   if (glow.layers) glow.layers.enable(1);
-                  // reduce opacity/size for warnings
-                  if (node.status === 'warning') {
-                    try { if (glow.material) glow.material.opacity = 0.45; } catch(e){}
-                    try { glow.scale.multiplyScalar(0.85); } catch(e){}
-                  }
                   group.add(glow);
                 }
-                // add a core sprite: red for error, white for warning (smaller)
-                try {
-                  // reduce the inner alpha for error cores so the central circle is less blinding
-                  const core = (node.status === 'error') ? makeCoreSprite(new THREE.Color(0xC62828), baseSize * 1.0, 0.45) : makeCoreSprite(new THREE.Color(0xFFFFFF), baseSize * 0.45);
-                  if (core) {
-                    core.position.set(0, 0, 0);
-                    try { core.userData.bloom = true; } catch(e){}
-                    if (core.layers) core.layers.enable(1);
-                    // slightly reduce warning core opacity so it sits behind error cores visually
-                    if (node.status === 'warning') {
-                      try { if (core.material) core.material.opacity = 0.7; } catch(e){}
-                    }
-                    group.add(core);
-                  }
-                } catch(e){}
+                // NOTE: core sprite and mesh/label bloom removed to keep only the outer halo effect
               } catch(e){}
             }
         } catch (e) {}
