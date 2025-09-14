@@ -207,8 +207,8 @@
             <input type='range' id='d3fg-bloom-threshold' min='0' max='1' step='0.01' value='0.05' style='width:160px'>
           </label>
         </div>
-        <label style="display:block">ノードサイズ倍率: <span id='d3fg-size-val'>1.0</span>
-          <input type='range' id='d3fg-size-range' min='0.4' max='2.5' step='0.05' value='1.0' style='width:160px'>
+        <label style="display:block">ノードサイズ倍率: <span id='d3fg-size-val'>0.40</span>
+          <input type='range' id='d3fg-size-range' min='0.4' max='2.5' step='0.05' value='0.40' style='width:160px'>
         </label>
         <hr style='border:none;border-top:1px solid rgba(255,255,255,0.06);margin:8px 0'>
         <label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
@@ -260,7 +260,7 @@
   const savedAutoOrbitSpeed = localStorage.getItem('d3fg_auto_orbit_speed');
 
       if (savedLabel !== null) chk.checked = savedLabel === '1'; else chk.checked = true;
-      if (savedScale !== null) { range.value = savedScale; val.textContent = parseFloat(savedScale).toFixed(2); }
+  if (savedScale !== null) { range.value = savedScale; val.textContent = parseFloat(savedScale).toFixed(2); } else { range.value = '0.40'; val.textContent = '0.40'; }
       if (savedLODEn !== null) lodToggle.checked = savedLODEn === '1'; else lodToggle.checked = true;
       if (savedLODDist !== null) { lodRange.value = savedLODDist; lodVal.textContent = parseFloat(savedLODDist).toFixed(0); }
       if (savedLODInterval !== null) { lodIntervalEl.value = savedLODInterval; lodIntervalVal.textContent = parseInt(savedLODInterval,10); }
@@ -526,15 +526,17 @@
             const c = (col && col.isColor) ? col : new THREE.Color(col);
             const r = Math.floor(c.r * 255), g = Math.floor(c.g * 255), b = Math.floor(c.b * 255);
             const grad = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
-            // stronger white core (kept very subtle), then solid color (reduced alpha), then softer falloff
-            grad.addColorStop(0.0, `rgba(255,255,255,0.12)`);
-            grad.addColorStop(0.20, `rgba(${r},${g},${b},0.85)`);
-            grad.addColorStop(0.45, `rgba(${r},${g},${b},0.55)`);
+            // remove white core so center color shows through cleanly;
+            // start with stronger color at center for a solid look, then softer falloff
+            grad.addColorStop(0.0, `rgba(${r},${g},${b},0.92)`);
+            grad.addColorStop(0.18, `rgba(${r},${g},${b},0.85)`);
+            grad.addColorStop(0.45, `rgba(${r},${g},${b},0.45)`);
             grad.addColorStop(1.0, `rgba(${r},${g},${b},0)`);
             ctx.fillStyle = grad; ctx.fillRect(0,0,size,size);
             const tex = new THREE.CanvasTexture(canvas);
             tex.minFilter = THREE.LinearFilter;
-            const mat = new THREE.SpriteMaterial({ map: tex, blending: THREE.AdditiveBlending, depthTest: false, transparent: true, opacity: 0.6 });
+            // set overall glow opacity so the center appears saturated but halo remains soft
+            const mat = new THREE.SpriteMaterial({ map: tex, blending: THREE.AdditiveBlending, depthTest: false, transparent: true, opacity: 0.85 });
             const spr = new THREE.Sprite(mat);
             const s = Math.max(1, scaleFactor);
             // scale up slightly to make halo larger and softer
@@ -569,10 +571,12 @@
             const tex = new THREE.CanvasTexture(canvas);
             tex.minFilter = THREE.LinearFilter;
             // use NormalBlending for the core; reduce opacity so the center is even more subdued
-            const mat = new THREE.SpriteMaterial({ map: tex, blending: THREE.NormalBlending, depthTest: false, transparent: true, opacity: 0.28 });
+            // use a more opaque default for core so it can appear as a solid disk when desired
+            const mat = new THREE.SpriteMaterial({ map: tex, blending: THREE.NormalBlending, depthTest: false, transparent: true, opacity: 0.95 });
             const spr = new THREE.Sprite(mat);
             const s = Math.max(1, scaleFactor);
-            spr.scale.set(s * 0.8, s * 0.8, 1);
+            // scale the core to be able to fill up to the glow radius when caller requests
+            spr.scale.set(s * 1.0, s * 1.0, 1);
             spr.renderOrder = 2;
             return spr;
           } catch (e) { return null; }
@@ -589,8 +593,8 @@
               // Do NOT mark the mesh or label as bloom targets; keep bloom limited to the outer glow sprite only.
               // add an additive glow sprite behind the node to emphasize halo
               try {
-                // choose glow color: Google's red for errors, Google's yellow for warnings
-                const glowColor = (node.status === 'error') ? new THREE.Color(0xEA4335) : new THREE.Color(0xFBBC05);
+                // choose glow color: deeper red for errors (stronger halo), Google's yellow for warnings
+                const glowColor = (node.status === 'error') ? new THREE.Color(0xB00020) : new THREE.Color(0xFBBC05);
                 // Use the same glow scale for both statuses
                 const glowScale = baseSize * 4.0;
                 const glow = makeGlowSprite(glowColor, glowScale);
@@ -599,7 +603,23 @@
                   // mark only the glow sprite for bloom and enable bloom layer
                   try { glow.userData.bloom = true; } catch(e){}
                   if (glow.layers) glow.layers.enable(1);
+                  // if error, increase sprite opacity slightly to make the red halo appear stronger
+                  try { if (node.status === 'error' && glow.material) glow.material.opacity = Math.max(0.75, glow.material.opacity || 0.75); } catch(e){}
                   group.add(glow);
+
+                  // For error nodes, add a saturated red core sprite (non-bloom) so the center is a clean red disk
+                  if (node.status === 'error') {
+                    try {
+                      // create a core sprite scaled to the glow radius so the core appears solid up to the halo
+                      const core = makeCoreSprite(new THREE.Color(0xB00020), glowScale, 1.0);
+                      if (core) {
+                        core.position.set(0, 0, 0);
+                        try { core.userData.bloom = false; } catch(e){}
+                        try { if (core.material) core.material.opacity = 1.0; } catch(e){}
+                        group.add(core);
+                      }
+                    } catch (e) {}
+                  }
                 }
                 // NOTE: core sprite and mesh/label bloom removed to keep only the outer halo effect
               } catch(e){}
