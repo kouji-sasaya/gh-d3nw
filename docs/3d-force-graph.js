@@ -541,7 +541,7 @@
 
         // small core sprite: intense white center to drive bloom
         // create a circular core sprite with a radial gradient; color is a THREE.Color or hex
-        function makeCoreSprite(color, scaleFactor) {
+        function makeCoreSprite(color, scaleFactor, innerAlpha) {
           try {
             const size = 256; // larger for smoother circular falloff
             const canvas = document.createElement('canvas');
@@ -551,16 +551,19 @@
             const c = (color && color.isColor) ? color : new THREE.Color(color || 0xffffff);
             const r = Math.floor(c.r * 255), g = Math.floor(c.g * 255), b = Math.floor(c.b * 255);
             const grad = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
-            // tight bright core, then colored glow, then fade
-            grad.addColorStop(0.0, `rgba(${r},${g},${b},1)`);
-            grad.addColorStop(0.18, `rgba(${r},${g},${b},0.98)`);
+            // allow caller to reduce inner alpha so the core isn't overly bright
+            const ia = (typeof innerAlpha === 'number') ? Math.max(0, Math.min(1, innerAlpha)) : 1.0;
+            // tight core (use ia), then colored glow, then fade
+            grad.addColorStop(0.0, `rgba(${r},${g},${b},${ia})`);
+            grad.addColorStop(0.18, `rgba(${r},${g},${b},${Math.max(0.6, ia * 0.98)})`);
             grad.addColorStop(0.36, `rgba(${r},${g},${b},0.7)`);
             grad.addColorStop(0.65, `rgba(${r},${g},${b},0.28)`);
             grad.addColorStop(1.0, `rgba(${r},${g},${b},0)`);
             ctx.fillStyle = grad; ctx.fillRect(0,0,size,size);
             const tex = new THREE.CanvasTexture(canvas);
             tex.minFilter = THREE.LinearFilter;
-            const mat = new THREE.SpriteMaterial({ map: tex, blending: THREE.AdditiveBlending, depthTest: false, transparent: true, opacity: 1.0 });
+            // use NormalBlending for the core so the center doesn't additively brighten the scene
+            const mat = new THREE.SpriteMaterial({ map: tex, blending: THREE.NormalBlending, depthTest: false, transparent: true, opacity: 0.9 });
             const spr = new THREE.Sprite(mat);
             const s = Math.max(1, scaleFactor);
             spr.scale.set(s * 0.8, s * 0.8, 1);
@@ -602,7 +605,8 @@
                 }
                 // add a core sprite: red for error, white for warning (smaller)
                 try {
-                  const core = (node.status === 'error') ? makeCoreSprite(new THREE.Color(0xC62828), baseSize * 1.0) : makeCoreSprite(new THREE.Color(0xFFFFFF), baseSize * 0.45);
+                  // reduce the inner alpha for error cores so the central circle is less blinding
+                  const core = (node.status === 'error') ? makeCoreSprite(new THREE.Color(0xC62828), baseSize * 1.0, 0.45) : makeCoreSprite(new THREE.Color(0xFFFFFF), baseSize * 0.45);
                   if (core) {
                     core.position.set(0, 0, 0);
                     try { core.userData.bloom = true; } catch(e){}
