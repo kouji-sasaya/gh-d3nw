@@ -187,6 +187,20 @@
         <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
           <input type='checkbox' id='d3fg-label-toggle' /> ラベル表示
         </label>
+        <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <input type='checkbox' id='d3fg-bloom-toggle' /> Bloom (グロー) を有効
+        </label>
+  <div id='d3fg-bloom-controls' style='margin-bottom:8px;display:none'>
+          <label style="display:block">強さ: <span id='d3fg-bloom-strength-val'>2.40</span>
+            <input type='range' id='d3fg-bloom-strength' min='0' max='4' step='0.05' value='2.4' style='width:160px'>
+          </label>
+          <label style="display:block">半径: <span id='d3fg-bloom-radius-val'>0.90</span>
+            <input type='range' id='d3fg-bloom-radius' min='0' max='2.0' step='0.01' value='0.9' style='width:160px'>
+          </label>
+          <label style="display:block">閾値: <span id='d3fg-bloom-threshold-val'>0.05</span>
+            <input type='range' id='d3fg-bloom-threshold' min='0' max='1' step='0.01' value='0.05' style='width:160px'>
+          </label>
+        </div>
         <label style="display:block">ノードサイズ倍率: <span id='d3fg-size-val'>1.0</span>
           <input type='range' id='d3fg-size-range' min='0.4' max='2.5' step='0.05' value='1.0' style='width:160px'>
         </label>
@@ -204,6 +218,14 @@
       container.appendChild(ui);
 
       const chk = ui.querySelector('#d3fg-label-toggle');
+  const bloomChk = ui.querySelector('#d3fg-bloom-toggle');
+  const bloomControls = ui.querySelector('#d3fg-bloom-controls');
+  const bloomStrength = ui.querySelector('#d3fg-bloom-strength');
+  const bloomRadius = ui.querySelector('#d3fg-bloom-radius');
+  const bloomThreshold = ui.querySelector('#d3fg-bloom-threshold');
+  const bloomStrengthVal = ui.querySelector('#d3fg-bloom-strength-val');
+  const bloomRadiusVal = ui.querySelector('#d3fg-bloom-radius-val');
+  const bloomThresholdVal = ui.querySelector('#d3fg-bloom-threshold-val');
       const range = ui.querySelector('#d3fg-size-range');
       const val = ui.querySelector('#d3fg-size-val');
       const lodToggle = ui.querySelector('#d3fg-lod-toggle');
@@ -224,6 +246,15 @@
       if (savedLODEn !== null) lodToggle.checked = savedLODEn === '1'; else lodToggle.checked = true;
       if (savedLODDist !== null) { lodRange.value = savedLODDist; lodVal.textContent = parseFloat(savedLODDist).toFixed(0); }
       if (savedLODInterval !== null) { lodIntervalEl.value = savedLODInterval; lodIntervalVal.textContent = parseInt(savedLODInterval,10); }
+  // bloom 設定を復元
+  const savedBloom = localStorage.getItem('d3fg_bloom_enabled');
+  const savedBloomStrength = localStorage.getItem('d3fg_bloom_strength');
+  const savedBloomRadius = localStorage.getItem('d3fg_bloom_radius');
+  const savedBloomThreshold = localStorage.getItem('d3fg_bloom_threshold');
+  if (savedBloom !== null) bloomChk.checked = savedBloom === '1'; else bloomChk.checked = false;
+  if (savedBloomStrength !== null) { bloomStrength.value = savedBloomStrength; bloomStrengthVal.textContent = parseFloat(savedBloomStrength).toFixed(2); }
+  if (savedBloomRadius !== null) { bloomRadius.value = savedBloomRadius; bloomRadiusVal.textContent = parseFloat(savedBloomRadius).toFixed(2); }
+  if (savedBloomThreshold !== null) { bloomThreshold.value = savedBloomThreshold; bloomThresholdVal.textContent = parseFloat(savedBloomThreshold).toFixed(2); }
 
       function applyLabelVisibility(visible) {
         // nodes 配列に保存された __labelSprite を探して表示/非表示
@@ -317,6 +348,41 @@
         localStorage.setItem('d3fg_lod_interval', String(v));
       });
 
+      // --- Bloom UI イベント ---
+      bloomChk.addEventListener('change', async () => {
+        localStorage.setItem('d3fg_bloom_enabled', bloomChk.checked ? '1' : '0');
+        bloomControls.style.display = bloomChk.checked ? 'block' : 'none';
+        // If enabling bloom and composer not yet prepared, try to load postprocessing scripts and create composer
+        if (bloomChk.checked && typeof THREE !== 'undefined') {
+          await tryPrepareBloom();
+        }
+      });
+
+      bloomStrength.addEventListener('input', () => {
+        const v = parseFloat(bloomStrength.value);
+        bloomStrengthVal.textContent = v.toFixed(2);
+        localStorage.setItem('d3fg_bloom_strength', String(v));
+        if (bloomPass) bloomPass.strength = v;
+      });
+      bloomRadius.addEventListener('input', () => {
+        const v = parseFloat(bloomRadius.value);
+        bloomRadiusVal.textContent = v.toFixed(2);
+        localStorage.setItem('d3fg_bloom_radius', String(v));
+        if (bloomPass) bloomPass.radius = v;
+      });
+      bloomThreshold.addEventListener('input', () => {
+        const v = parseFloat(bloomThreshold.value);
+        bloomThresholdVal.textContent = v.toFixed(2);
+        localStorage.setItem('d3fg_bloom_threshold', String(v));
+        if (bloomPass) bloomPass.threshold = v;
+        if (highPass && highPass.uniforms && highPass.uniforms['luminosityThreshold']) {
+          try { highPass.uniforms['luminosityThreshold'].value = v; } catch(e){}
+        }
+      });
+
+      // 初期表示切替
+      bloomControls.style.display = bloomChk.checked ? 'block' : 'none';
+
       chk.addEventListener('change', () => {
         localStorage.setItem('d3fg_label_visible', chk.checked ? '1' : '0');
         applyLabelVisibility(chk.checked);
@@ -382,18 +448,33 @@
         const b = 0.55;
         const baseSize = Math.max(0.9, a + b * Math.sqrt(rawSize));
 
-        const geometry = new THREE.SphereGeometry(baseSize, 12, 12);
+  const geometry = new THREE.SphereGeometry(baseSize, 12, 12);
         const colorHex = node._color || '#ffffff';
         const material = new THREE.MeshStandardMaterial({ color: new THREE.Color(colorHex), roughness: 0.6, metalness: 0.1 });
         const mesh = new THREE.Mesh(geometry, material);
-        if (node.status === 'error') mesh.material.emissive = new THREE.Color(0xff4444);
-        if (node.status === 'warning') mesh.material.emissive = new THREE.Color(0xffcc44);
+        // status による色付けと発光設定
+        if (node.status === 'error') {
+          // error: make the red deeper/saturated so it reads as a stronger red core
+          const errColor = new THREE.Color(0xC62828); // deeper, blood-red tone
+          mesh.material.color = errColor;
+          mesh.material.emissive = errColor;
+          // keep emissive strong but slightly reduced from earlier extreme to avoid washout
+          try { if (typeof mesh.material.emissiveIntensity !== 'undefined') mesh.material.emissiveIntensity = 6.0; } catch(e){}
+          try { mesh.material.needsUpdate = true; } catch(e){}
+        } else if (node.status === 'warning') {
+          // warning: keep yellow but tone down the emissive strength so it doesn't overpower errors
+          const warnColor = new THREE.Color(0xFFEB3B); // warm yellow
+          mesh.material.color = warnColor;
+          mesh.material.emissive = warnColor;
+          try { if (typeof mesh.material.emissiveIntensity !== 'undefined') mesh.material.emissiveIntensity = 1.0; } catch(e){}
+          try { mesh.material.needsUpdate = true; } catch(e){}
+        }
 
         // Group に mesh とラベル sprite をまとめる
         const group = new THREE.Group();
         group.add(mesh);
 
-        // ラベルは常時表示（スプライト）
+  // ラベルは常時表示（スプライト）
         const label = makeLabelSprite(node.name || node.id, '#eef2ff');
         // position label slightly above the node
         label.position.set(0, baseSize + 0.8, 0);
@@ -402,9 +483,113 @@
         label.scale.multiplyScalar(scaleFactor);
         group.add(label);
 
+        // --- Additive glow sprite to emphasize halo (only for bloom-target statuses)
+        function makeGlowSprite(col, scaleFactor) {
+          try {
+            const size = 256; // larger canvas for smoother gradient
+            const canvas = document.createElement('canvas');
+            canvas.width = size; canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            // convert THREE.Color to rgba components
+            const c = (col && col.isColor) ? col : new THREE.Color(col);
+            const r = Math.floor(c.r * 255), g = Math.floor(c.g * 255), b = Math.floor(c.b * 255);
+            const grad = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+            // stronger white core, then solid color, then softer falloff
+            grad.addColorStop(0.0, `rgba(255,255,255,1)`);
+            grad.addColorStop(0.20, `rgba(${r},${g},${b},1)`);
+            grad.addColorStop(0.45, `rgba(${r},${g},${b},0.7)`);
+            grad.addColorStop(1.0, `rgba(${r},${g},${b},0)`);
+            ctx.fillStyle = grad; ctx.fillRect(0,0,size,size);
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.minFilter = THREE.LinearFilter;
+            const mat = new THREE.SpriteMaterial({ map: tex, blending: THREE.AdditiveBlending, depthTest: false, transparent: true, opacity: 0.85 });
+            const spr = new THREE.Sprite(mat);
+            const s = Math.max(1, scaleFactor);
+            // scale up slightly to make halo larger and softer
+            spr.scale.set(s * 1.2, s * 1.2, 1);
+            spr.renderOrder = 0;
+            return spr;
+          } catch (e) { return null; }
+        }
+
+        // small core sprite: intense white center to drive bloom
+        // create a circular core sprite with a radial gradient; color is a THREE.Color or hex
+        function makeCoreSprite(color, scaleFactor) {
+          try {
+            const size = 256; // larger for smoother circular falloff
+            const canvas = document.createElement('canvas');
+            canvas.width = size; canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0,0,size,size);
+            const c = (color && color.isColor) ? color : new THREE.Color(color || 0xffffff);
+            const r = Math.floor(c.r * 255), g = Math.floor(c.g * 255), b = Math.floor(c.b * 255);
+            const grad = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+            // tight bright core, then colored glow, then fade
+            grad.addColorStop(0.0, `rgba(${r},${g},${b},1)`);
+            grad.addColorStop(0.18, `rgba(${r},${g},${b},0.98)`);
+            grad.addColorStop(0.36, `rgba(${r},${g},${b},0.7)`);
+            grad.addColorStop(0.65, `rgba(${r},${g},${b},0.28)`);
+            grad.addColorStop(1.0, `rgba(${r},${g},${b},0)`);
+            ctx.fillStyle = grad; ctx.fillRect(0,0,size,size);
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.minFilter = THREE.LinearFilter;
+            const mat = new THREE.SpriteMaterial({ map: tex, blending: THREE.AdditiveBlending, depthTest: false, transparent: true, opacity: 1.0 });
+            const spr = new THREE.Sprite(mat);
+            const s = Math.max(1, scaleFactor);
+            spr.scale.set(s * 0.8, s * 0.8, 1);
+            spr.renderOrder = 2;
+            return spr;
+          } catch (e) { return null; }
+        }
+
         // 保存して hover で操作できるようにする
         node.__labelSprite = label;
         node.__threeObj = group;
+
+        // --- Bloom 対象にする ---
+        // status === 'error' または status === 'warning' の場合、ラベルとノード本体をレイヤー1に設定して選択的ブルームを適用
+        try {
+          if (node.status === 'error' || node.status === 'warning') {
+              // mark as bloom target
+              try { mesh.userData.bloom = true; } catch(e){}
+              try { label.userData.bloom = true; } catch(e){}
+              if (mesh.layers) mesh.layers.enable(1);
+              if (label.layers) label.layers.enable(1);
+              // add an additive glow sprite behind the node to emphasize halo
+              try {
+                // choose glow color: use a deeper red for errors, yellow for warnings
+                const glowColor = (node.status === 'error') ? new THREE.Color(0xC62828) : new THREE.Color(0xFFEB3B);
+                // tone down warning halo size/intensity so it doesn't drown out errors
+                const glowScale = (node.status === 'error') ? baseSize * 4.0 : baseSize * 2.0;
+                const glow = makeGlowSprite(glowColor, glowScale);
+                if (glow) {
+                  glow.position.set(0, 0, 0);
+                  try { glow.userData.bloom = true; } catch(e){}
+                  if (glow.layers) glow.layers.enable(1);
+                  // reduce opacity/size for warnings
+                  if (node.status === 'warning') {
+                    try { if (glow.material) glow.material.opacity = 0.45; } catch(e){}
+                    try { glow.scale.multiplyScalar(0.85); } catch(e){}
+                  }
+                  group.add(glow);
+                }
+                // add a core sprite: red for error, white for warning (smaller)
+                try {
+                  const core = (node.status === 'error') ? makeCoreSprite(new THREE.Color(0xC62828), baseSize * 1.0) : makeCoreSprite(new THREE.Color(0xFFFFFF), baseSize * 0.45);
+                  if (core) {
+                    core.position.set(0, 0, 0);
+                    try { core.userData.bloom = true; } catch(e){}
+                    if (core.layers) core.layers.enable(1);
+                    // slightly reduce warning core opacity so it sits behind error cores visually
+                    if (node.status === 'warning') {
+                      try { if (core.material) core.material.opacity = 0.7; } catch(e){}
+                    }
+                    group.add(core);
+                  }
+                } catch(e){}
+              } catch(e){}
+            }
+        } catch (e) {}
 
         return group;
       });
@@ -442,10 +627,31 @@
           controls.panSpeed = 0.8;
           // GraphInstance の tick で controls.update を呼ぶ
           const origTick = GraphInstance._tick;
-          GraphInstance._tick = function() {
-            try { controls.update(); } catch (e) {}
-            if (origTick) origTick.apply(this, arguments);
-          };
+            GraphInstance._tick = function() {
+              try { controls.update(); } catch (e) {}
+              // If selective bloom is prepared and enabled, render in two passes:
+              // 1) render bloom layer (layer 1) into bloomComposer
+              // 2) render full scene into finalComposer (which will composite over screen)
+              try {
+                if (bloomComposer && finalComposer && bloomEnabled()) {
+                  const renderer = threeRenderer;
+                  const camera = threeCamera;
+                  try {
+                    // 1) replace non-bloom materials with dark / hide sprites
+                    replaceMaterialsForBloom();
+                    // 2) render bloomComposer which now only contains bright/bloom objects
+                    bloomComposer.render();
+                  } finally {
+                    // 3) restore original materials
+                    restoreMaterials();
+                  }
+                  // 4) render final scene to screen
+                  finalComposer.render();
+                  return; // skip original rendering
+                }
+              } catch (e) {}
+              if (origTick) origTick.apply(this, arguments);
+            };
         }
       } catch (e) {
         console.warn('OrbitControls の初期化に失敗しました', e);
@@ -453,6 +659,120 @@
     } catch (err) {
       console.warn('カスタム nodeThreeObject / lighting 作成で警告', err);
     }
+
+  // --- Bloom (postprocessing) setup (selective bloom via material swap) ---
+  // We'll create two composers on demand: bloomComposer (renders bright parts) and finalComposer (renders normally)
+  let bloomComposer = null;
+  let finalComposer = null;
+  let bloomPass = null;
+  let highPass = null;
+  // dark material used to hide non-bloom objects when rendering bloom pass
+  let darkMaterial = null;
+  const _savedMaterials = [];
+
+    function bloomEnabled() {
+      try {
+        const v = localStorage.getItem('d3fg_bloom_enabled');
+        if (v !== null) return v === '1';
+        // fallback to false
+        return false;
+      } catch (e) { return false; }
+    }
+
+  // placeholders for functions that will be created when composers are prepared
+  let replaceMaterialsForBloom = null;
+  let restoreMaterials = null;
+
+  async function tryPrepareBloom() {
+      if (finalComposer) return; // already prepared
+      try {
+        // Load postprocessing scripts (EffectComposer + dependencies)
+        if (typeof THREE.EffectComposer === 'undefined') {
+          await loadScript('https://cdn.jsdelivr.net/npm/three@0.153.0/examples/js/postprocessing/EffectComposer.js');
+          await loadScript('https://cdn.jsdelivr.net/npm/three@0.153.0/examples/js/postprocessing/RenderPass.js');
+          await loadScript('https://cdn.jsdelivr.net/npm/three@0.153.0/examples/js/postprocessing/ShaderPass.js');
+          await loadScript('https://cdn.jsdelivr.net/npm/three@0.153.0/examples/js/shaders/CopyShader.js');
+          await loadScript('https://cdn.jsdelivr.net/npm/three@0.153.0/examples/js/shaders/LuminosityHighPassShader.js');
+          await loadScript('https://cdn.jsdelivr.net/npm/three@0.153.0/examples/js/postprocessing/UnrealBloomPass.js');
+        }
+
+        const threeRenderer = GraphInstance.renderer();
+        const threeCamera = GraphInstance.camera();
+        const threeScene = GraphInstance.scene();
+        if (!threeRenderer || !threeCamera || !threeScene) return;
+
+  // ensure darkMaterial created
+  darkMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+
+  // bloomComposer: will render scene where non-bloom objects are darkened
+  bloomComposer = new THREE.EffectComposer(threeRenderer);
+  const bloomRenderPass = new THREE.RenderPass(threeScene, threeCamera);
+  bloomComposer.addPass(bloomRenderPass);
+
+        const width = Math.max(256, Math.floor(window.innerWidth));
+        const height = Math.max(256, Math.floor(window.innerHeight));
+        // Add a luminosity high-pass to extract bright areas before bloom
+        try {
+          highPass = new THREE.ShaderPass(THREE.LuminosityHighPassShader);
+          // threshold parameter controls how bright a pixel must be
+          const savedThreshold = parseFloat(localStorage.getItem('d3fg_bloom_threshold')) || 0.05;
+          highPass.uniforms['luminosityThreshold'].value = savedThreshold;
+          bloomComposer.addPass(highPass);
+        } catch (e) {}
+  bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(width, height), 2.4, 0.9, 0.05);
+    const sStrength = parseFloat(localStorage.getItem('d3fg_bloom_strength')) || 2.4;
+    const sRadius = parseFloat(localStorage.getItem('d3fg_bloom_radius')) || 0.9;
+  const sThreshold = parseFloat(localStorage.getItem('d3fg_bloom_threshold')) || 0.05;
+    bloomPass.strength = sStrength; bloomPass.radius = sRadius; bloomPass.threshold = sThreshold;
+        bloomComposer.addPass(bloomPass);
+
+        // finalComposer: render scene normally
+        finalComposer = new THREE.EffectComposer(threeRenderer);
+        const finalRenderPass = new THREE.RenderPass(threeScene, threeCamera);
+        finalComposer.addPass(finalRenderPass);
+
+        // helper to replace materials for selective bloom
+        replaceMaterialsForBloom = function() {
+          _savedMaterials.length = 0;
+          threeScene.traverse(obj => {
+            try {
+              if ((obj.isMesh || obj.isSprite) && !obj.userData.bloom) {
+                _savedMaterials.push({ obj, material: obj.material, visible: obj.visible });
+                if (obj.isMesh) obj.material = darkMaterial;
+                if (obj.isSprite) obj.visible = false;
+              }
+            } catch (e) {}
+          });
+        };
+
+        restoreMaterials = function() {
+          for (let i = 0; i < _savedMaterials.length; i++) {
+            const e = _savedMaterials[i];
+            try {
+              if (e.obj.isMesh) e.obj.material = e.material;
+              if (e.obj.isSprite) e.obj.visible = e.visible;
+            } catch (e2) {}
+          }
+          _savedMaterials.length = 0;
+        };
+
+        // resize handling
+        window.addEventListener('resize', () => {
+          try {
+            const w = Math.max(256, Math.floor(window.innerWidth));
+            const h = Math.max(256, Math.floor(window.innerHeight));
+            bloomComposer.setSize(w, h);
+            finalComposer.setSize(w, h);
+          } catch (e) {}
+        });
+      } catch (e) {
+        console.warn('Bloom の準備に失敗しました', e);
+        bloomComposer = null; finalComposer = null; bloomPass = null;
+      }
+    }
+
+    // If bloom was enabled from saved settings, prepare it now (async)
+    if (bloomEnabled()) tryPrepareBloom();
 
     // 6) 描画が始まったらローダーを消す
     // 初フレームが来たら hide
