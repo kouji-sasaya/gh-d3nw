@@ -64,6 +64,15 @@
 
     // 2) data.json の形式 -> 3d-force-graph の {nodes, links} へ変換
     // raw は [{id, name, type, links: [id,...], status,...}, ...]
+    // まず config.json を読み込み、type ごとのサイズ・色を取得する
+    let cfg = null;
+    try {
+      const cres = await fetch('config.json');
+      if (cres.ok) cfg = await cres.json();
+    } catch (e) {
+      console.warn('config.json を読み込めませんでした。デフォルト設定を使用します。', e);
+    }
+
     const idMap = new Map();
     const nodes = raw.map((d, i) => {
       const node = {
@@ -73,6 +82,15 @@
         status: d.status || '',
         address: d.address || ''
       };
+      // config.json の types 定義を参照して _size と _color を付与
+      const tcfg = cfg && cfg.config && cfg.config.types && cfg.config.types[node.type];
+      if (tcfg) {
+        node._size = tcfg.size;    // ユーザー指定のサイズ値
+        node._color = tcfg.color;  // ヘックスカラー文字列
+      } else {
+        node._size = 50; // デフォルト
+        node._color = '#aaaaaa';
+      }
       idMap.set(d.id, node);
       return node;
     });
@@ -130,7 +148,7 @@
     const GraphInstance = Graph()(container)
       .graphData({ nodes, links })
       .nodeLabel(node => `${node.name} (${node.id})`)
-      .nodeAutoColorBy('type')
+      // nodeAutoColorBy は使わず config.json の色を使う
       .linkDirectionalParticles(0)
       .backgroundColor('#07080a')
       .onNodeClick(node => {
@@ -144,10 +162,17 @@
     try {
       const spriteTexture = null; // placeholder if needed
       GraphInstance.nodeThreeObject(node => {
-        const sprite = new THREE.Mesh(
-          new THREE.SphereGeometry(2.5, 8, 8),
-          new THREE.MeshStandardMaterial({ color: new THREE.Color(node.color || node._color || 0xffffff), roughness: 0.6, metalness: 0.1 })
-        );
+  // config.json の size を視認性の良い半径にスケーリングして使用
+  // 大きさのダイナミクスを落ち着かせるため sqrt スケールを採用
+  const rawSize = node._size || 50;
+  // tunable constants: a (min radius), b (scale factor)
+  const a = 1.2;
+  const b = 0.55; // 調整すると全体の大きさが増減します
+  const baseSize = Math.max(0.9, a + b * Math.sqrt(rawSize));
+  const geometry = new THREE.SphereGeometry(baseSize, 12, 12);
+        const colorHex = node._color || '#ffffff';
+        const material = new THREE.MeshStandardMaterial({ color: new THREE.Color(colorHex), roughness: 0.6, metalness: 0.1 });
+        const sprite = new THREE.Mesh(geometry, material);
         // ステータスに応じた光るエフェクト
         if (node.status === 'error') sprite.material.emissive = new THREE.Color(0xff4444);
         if (node.status === 'warning') sprite.material.emissive = new THREE.Color(0xffcc44);
