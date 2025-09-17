@@ -178,16 +178,18 @@
     // --- UI: ラベル表示切替とノードサイズ倍率 ---
     (function setupUI() {
       const ui = document.createElement('div');
-      ui.style.position = 'absolute';
-      ui.style.right = '12px';
-      ui.style.top = '12px';
-      ui.style.zIndex = 10000;
-      ui.style.background = 'rgba(12,14,20,0.6)';
-      ui.style.color = '#eef2ff';
-      ui.style.padding = '10px 12px';
-      ui.style.borderRadius = '10px';
-      ui.style.fontFamily = 'Inter, system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "メイリオ", sans-serif';
-      ui.style.fontSize = '13px';
+  ui.style.position = 'absolute';
+  ui.style.left = '12px';
+  ui.style.right = 'auto';
+  ui.style.top = '12px';
+  ui.style.zIndex = 10000;
+  ui.style.background = 'rgba(12,14,20,0.6)';
+  ui.style.color = '#eef2ff';
+  ui.style.padding = '10px 12px';
+  ui.style.borderRadius = '10px';
+  ui.style.fontFamily = 'Inter, system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "メイリオ", sans-serif';
+  ui.style.fontSize = '13px';
+  ui.style.alignItems = 'start';
 
       ui.innerHTML = `
         <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
