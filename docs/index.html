@@ -178,7 +178,8 @@
         link.addEventListener('click', function(e) {
           e.preventDefault();
           localStorage.setItem('selectedMenu', this.id);
-          showMenu(this.id);
+          // すべてのメニューでページリロード
+          location.reload();
         });
       });
 
