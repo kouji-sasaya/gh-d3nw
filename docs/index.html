@@ -143,6 +143,11 @@
 
       // メニューごとの描画処理
       function showMenu(menuId) {
+        // forcelayout以外の時はfilterパネルを消す
+        if (menuId !== 'menu-forcelayout') {
+          const filterPanel = document.getElementById('network-filter-panel');
+          if (filterPanel && filterPanel.parentNode) filterPanel.parentNode.removeChild(filterPanel);
+        }
         switch (menuId) {
           case 'menu-datatable':
             loadScript('datatable.js');
@@ -154,7 +159,6 @@
             loadScript('forcelayout.js');
             break;
           case 'menu-force3d':
-            // 3d-force-graph を使う新しい実装を読み込む
             loadScript('3d-force-graph.js');
             break;
           case 'menu-sunburst':

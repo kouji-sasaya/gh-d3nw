@@ -115,22 +115,26 @@ const container = svg.append("g");
 container.attr("transform", "translate(0,0) scale(1)");
 
 // チェックボックスコンテナ（ツールチップ風）を作る場所を reserve
-let typeTooltip = document.getElementById('network-type-tooltip');
-if (!typeTooltip) {
-  typeTooltip = document.createElement('div');
-  typeTooltip.id = 'network-type-tooltip';
-  typeTooltip.style.position = 'fixed';
-  typeTooltip.style.top = '80px';
-  typeTooltip.style.right = '12px';
-  typeTooltip.style.padding = '8px';
-  typeTooltip.style.background = 'rgba(255,255,255,0.95)';
-  typeTooltip.style.border = '1px solid rgba(0,0,0,0.08)';
-  typeTooltip.style.borderRadius = '6px';
-  typeTooltip.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
-  typeTooltip.style.zIndex = 9999;
-  typeTooltip.style.fontSize = '13px';
-  typeTooltip.style.display = 'none'; // 最初は非表示（後で表示）
-  document.body.appendChild(typeTooltip);
+// 埋め込み型: #canvas内にtype/statusフィルタ用のdivを配置
+let filterPanel = document.getElementById('network-filter-panel');
+if (!filterPanel) {
+    filterPanel = document.createElement('div');
+    filterPanel.id = 'network-filter-panel';
+    filterPanel.style.position = 'absolute';
+    filterPanel.style.top = '12px';
+    filterPanel.style.right = '12px';
+    filterPanel.style.background = 'rgba(255,255,255,0.97)';
+    filterPanel.style.border = '1px solid #ccc';
+    filterPanel.style.borderRadius = '8px';
+    filterPanel.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+    filterPanel.style.fontSize = '13px';
+    filterPanel.style.padding = '12px 16px 10px 16px';
+    filterPanel.style.zIndex = 10;
+    filterPanel.style.minWidth = '180px';
+    filterPanel.style.maxWidth = '260px';
+    filterPanel.style.userSelect = 'none';
+    filterPanel.innerHTML = '<div id="network-type-tooltip"></div><hr style="margin:8px 0;"><div id="network-status-tooltip"></div>';
+    document.getElementById('canvas').appendChild(filterPanel);
 }
 
 // グローバルで管理
@@ -619,29 +623,7 @@ function createTypeTooltip(config) {
         wrapper.appendChild(span);
         el.appendChild(wrapper);
     });
-
-    // 表示トグルボタンをツールバー風に作る（右上に小さいボタン）
-    let toggleBtn = document.getElementById('network-type-toggle');
-    if (!toggleBtn) {
-        toggleBtn = document.createElement('button');
-        toggleBtn.id = 'network-type-toggle';
-        toggleBtn.textContent = 'Types';
-        toggleBtn.title = 'Toggle type filters';
-        toggleBtn.style.position = 'fixed';
-        toggleBtn.style.top = '80px';
-        toggleBtn.style.right = '12px';
-        toggleBtn.style.zIndex = 10000;
-        toggleBtn.style.padding = '6px 8px';
-        toggleBtn.style.fontSize = '13px';
-        toggleBtn.style.borderRadius = '6px';
-        toggleBtn.style.border = '1px solid rgba(0,0,0,0.08)';
-        toggleBtn.style.background = 'white';
-        toggleBtn.addEventListener('click', () => {
-            el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'block' : 'none';
-        });
-        document.body.appendChild(toggleBtn);
-    }
-    // 最初は表示する
+    // 埋め込み型なのでトグルボタン等は不要
     el.style.display = 'block';
 }
 
@@ -719,26 +701,7 @@ window.addEventListener('beforeunload', () => {
 // ステータスフィルタ用ツールチップを作成
 function createStatusTooltip() {
     const statuses = ['pass', 'warning', 'error'];
-    let el = document.getElementById('network-status-tooltip');
-    if (!el) {
-        // ツールチップ要素がなければ新規作成
-        el = document.createElement('div');
-        el.id = 'network-status-tooltip';
-        el.className = 'type-checkbox-container';
-        el.style.position = 'fixed';
-        el.style.top = '300px';
-        el.style.right = '12px';
-        el.style.padding = '8px';
-        el.style.background = 'rgba(255,255,255,0.95)';
-        el.style.border = '1px solid rgba(0,0,0,0.08)';
-        el.style.borderRadius = '6px';
-        el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
-        el.style.zIndex = 9999;
-        el.style.fontSize = '13px';
-        el.style.display = 'none'; // 最初は非表示
-        document.body.appendChild(el);
-    }
-    // ツールチップ内容をセット
+    const el = document.getElementById('network-status-tooltip');
     el.innerHTML = '<strong style="display:block;margin-bottom:6px;">Filter status</strong>';
     statuses.forEach(st => {
         const wrapper = document.createElement('label');
@@ -765,29 +728,6 @@ function createStatusTooltip() {
         wrapper.appendChild(span);
         el.appendChild(wrapper);
     });
-
-    // トグルボタンを追加
-    let toggleBtn = document.getElementById('network-status-toggle');
-    if (!toggleBtn) {
-        toggleBtn = document.createElement('button');
-        toggleBtn.id = 'network-status-toggle';
-        toggleBtn.textContent = 'Status';
-        toggleBtn.title = 'Toggle status filters';
-        toggleBtn.style.position = 'fixed';
-        toggleBtn.style.top = '300px';
-        toggleBtn.style.right = '12px';
-        toggleBtn.style.zIndex = 10000;
-        toggleBtn.style.padding = '6px 8px';
-        toggleBtn.style.fontSize = '13px';
-        toggleBtn.style.borderRadius = '6px';
-        toggleBtn.style.border = '1px solid rgba(0,0,0,0.08)';
-        toggleBtn.style.background = 'white';
-        toggleBtn.addEventListener('click', () => {
-            el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'block' : 'none';
-        });
-        document.body.appendChild(toggleBtn);
-    }
-    // 最初は表示する
     el.style.display = 'block';
 }
 
