@@ -139,15 +139,16 @@
     // --- UI生成関数 ---
     function createFilterPanel() {
       const panel = document.createElement('div');
-      panel.className = 'type-checkbox-container';
-      panel.style.marginTop = '12px';
-      panel.style.background = 'rgba(255,255,255,0.93)';
-      panel.style.color = '#222';
-      panel.style.fontSize = '13px';
-      panel.style.maxWidth = '180px';
-      panel.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
-      panel.style.padding = '10px 12px';
-      panel.style.borderRadius = '8px';
+  panel.className = 'type-checkbox-container';
+  // panelの枠線や背景色などを削除し、透明に
+  panel.style.background = 'none';
+  panel.style.boxShadow = 'none';
+  panel.style.border = 'none';
+  panel.style.padding = '0';
+  panel.style.margin = '0';
+  panel.style.color = '#eef2ff';
+  panel.style.fontSize = '13px';
+  panel.style.maxWidth = '180px';
       panel.innerHTML = `
         <div style="font-weight:bold;margin-bottom:4px;">Type</div>
         <div id="d3fg-type-list"></div>
@@ -252,32 +253,41 @@
     // --- フィルタパネルをUI下部に追加 ---
     setTimeout(() => {
       const ui = container.querySelector('div'); // 既存UI
-      const filterPanel = createFilterPanel();
-      filterPanel.id = 'd3fg-filter-panel';
-      filterPanel.style.marginTop = '12px';
-      // UIの下に追加
+      // 右パネルのみ作成
+      const filterPanelR = createFilterPanel();
+      filterPanelR.id = 'd3fg-filter-panel-right';
+      filterPanelR.style.position = 'absolute';
+      filterPanelR.style.right = '12px';
+      filterPanelR.style.left = 'auto';
+      filterPanelR.style.top = '12px'; // ラベルパネルと同じ高さ
+      filterPanelR.style.pointerEvents = 'auto';
+      // UIの下に追加（ラベルパネルと同時表示）
       if (ui && ui.parentNode) {
-        ui.parentNode.insertBefore(filterPanel, ui.nextSibling);
+        ui.parentNode.insertBefore(filterPanelR, ui.nextSibling);
       } else {
-        container.appendChild(filterPanel);
+        container.appendChild(filterPanelR);
       }
-      // types チェックボックスイベント
+
+      // チェックボックス同期用ヘルパー
+      // syncPanelsは不要（片方のみ）
+      function syncPanels() {}
+
+      // types/status チェックボックスイベント（右パネルのみ）
       allTypes.forEach(type => {
-        const cb = filterPanel.querySelector(`#d3fg-type-${type}`);
-        if (cb) {
-          cb.addEventListener('change', () => {
-            if (cb.checked) enabledTypes.add(type); else enabledTypes.delete(type);
+        const cbR = filterPanelR.querySelector(`#d3fg-type-${type}`);
+        if (cbR) {
+          cbR.addEventListener('change', () => {
+            if (cbR.checked) enabledTypes.add(type); else enabledTypes.delete(type);
             saveFilterState('d3fg_enabled_types', enabledTypes);
             updateGraph();
           });
         }
       });
-      // status チェックボックスイベント
       allStatus.forEach(status => {
-        const cb = filterPanel.querySelector(`#d3fg-status-${status}`);
-        if (cb) {
-          cb.addEventListener('change', () => {
-            if (cb.checked) enabledStatus.add(status); else enabledStatus.delete(status);
+        const cbR = filterPanelR.querySelector(`#d3fg-status-${status}`);
+        if (cbR) {
+          cbR.addEventListener('change', () => {
+            if (cbR.checked) enabledStatus.add(status); else enabledStatus.delete(status);
             saveFilterState('d3fg_enabled_status', enabledStatus);
             updateGraph();
           });
