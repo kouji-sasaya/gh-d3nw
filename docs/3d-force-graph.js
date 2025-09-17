@@ -104,9 +104,12 @@
       }
     }
     // types/status一覧
-  const allTypes = Array.from(new Set(nodesRaw.map(n => n.type))).sort();
-  // status: 空文字は除外
-  const allStatus = Array.from(new Set(nodesRaw.map(n => n.status).filter(s => s && s.trim() !== ''))).sort();
+  // Typesの順番を project, domain, service, user の順に固定
+  const typeOrder = ['project', 'domain', 'service', 'user'];
+  const allTypes = typeOrder.filter(t => nodesRaw.some(n => n.type === t));
+  // Statusの順番を pass, warning, error の順に固定
+  const statusOrder = ['pass', 'warning', 'error'];
+  const allStatus = statusOrder.filter(s => nodesRaw.some(n => n.status === s));
     // --- localStorageからフィルタ状態を復元 ---
     function loadFilterState(key, all) {
       try {
