@@ -73,8 +73,10 @@
       console.warn('config.json を読み込めませんでした。デフォルト設定を使用します。', e);
     }
 
+
+    // --- types/status一覧を抽出 ---
     const idMap = new Map();
-    const nodes = raw.map((d, i) => {
+    const nodesRaw = raw.map((d, i) => {
       const node = {
         id: d.id,
         name: d.name || d.id,
@@ -82,27 +84,97 @@
         status: d.status || '',
         address: d.address || ''
       };
-      // config.json の types 定義を参照して _size と _color を付与
       const tcfg = cfg && cfg.config && cfg.config.types && cfg.config.types[node.type];
       if (tcfg) {
-        node._size = tcfg.size;    // ユーザー指定のサイズ値
-        node._color = tcfg.color;  // ヘックスカラー文字列
+        node._size = tcfg.size;
+        node._color = tcfg.color;
       } else {
-        node._size = 50; // デフォルト
+        node._size = 50;
         node._color = '#aaaaaa';
       }
       idMap.set(d.id, node);
       return node;
     });
-
-    const links = [];
+    const linksRaw = [];
     for (const d of raw) {
       if (Array.isArray(d.links)) {
         for (const tgt of d.links) {
-          // only create link if target exists
-          if (idMap.has(tgt)) links.push({ source: d.id, target: tgt });
+          if (idMap.has(tgt)) linksRaw.push({ source: d.id, target: tgt });
         }
       }
+    }
+    // types/status一覧
+  const allTypes = Array.from(new Set(nodesRaw.map(n => n.type))).sort();
+  // status: 空文字は除外
+  const allStatus = Array.from(new Set(nodesRaw.map(n => n.status).filter(s => s && s.trim() !== ''))).sort();
+    // --- localStorageからフィルタ状態を復元 ---
+    function loadFilterState(key, all) {
+      try {
+        const v = localStorage.getItem(key);
+        if (!v) return new Set(all);
+        const arr = JSON.parse(v);
+        return new Set(Array.isArray(arr) ? arr : all);
+      } catch (e) { return new Set(all); }
+    }
+    function saveFilterState(key, set) {
+      try { localStorage.setItem(key, JSON.stringify(Array.from(set))); } catch(e){}
+    }
+    let enabledTypes = loadFilterState('d3fg_enabled_types', allTypes);
+    let enabledStatus = loadFilterState('d3fg_enabled_status', allStatus);
+    // --- フィルタ適用関数 ---
+    function filterNodesAndLinks() {
+      // typeフィルタ: domain, project, service, user
+      // statusフィルタ: userノードのみ
+      const nodes = nodesRaw.filter(n => {
+        if (!enabledTypes.has(n.type)) return false;
+        if (n.type === 'user') {
+          return enabledStatus.has(n.status);
+        }
+        return true; // domain, project, service
+      });
+      const nodeIds = new Set(nodes.map(n => n.id));
+      const links = linksRaw.filter(l => nodeIds.has(l.source) && nodeIds.has(l.target));
+      return { nodes, links };
+    }
+    // --- UI生成関数 ---
+    function createFilterPanel() {
+      const panel = document.createElement('div');
+      panel.className = 'type-checkbox-container';
+      panel.style.marginTop = '12px';
+      panel.style.background = 'rgba(255,255,255,0.93)';
+      panel.style.color = '#222';
+      panel.style.fontSize = '13px';
+      panel.style.maxWidth = '180px';
+      panel.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+      panel.style.padding = '10px 12px';
+      panel.style.borderRadius = '8px';
+      panel.innerHTML = `
+        <div style="font-weight:bold;margin-bottom:4px;">Type</div>
+        <div id="d3fg-type-list"></div>
+        <div style="font-weight:bold;margin:8px 0 4px;">Status</div>
+        <div id="d3fg-status-list"></div>
+      `;
+      // types
+      const typeList = panel.querySelector('#d3fg-type-list');
+      allTypes.forEach(type => {
+        const id = 'd3fg-type-' + type;
+        const label = document.createElement('label');
+        label.style.display = 'block';
+        label.style.marginBottom = '2px';
+        label.innerHTML = `<input type="checkbox" id="${id}" value="${type}" ${enabledTypes.has(type)?'checked':''}> ${type}`;
+        typeList.appendChild(label);
+      });
+      // status
+      const statusList = panel.querySelector('#d3fg-status-list');
+      allStatus.forEach(status => {
+        const id = 'd3fg-status-' + status;
+        const label = document.createElement('label');
+        label.style.display = 'block';
+        label.style.marginBottom = '2px';
+        label.innerHTML = `<input type="checkbox" id="${id}" value="${status}" ${enabledStatus.has(status)?'checked':''}> ${status}`;
+        statusList.appendChild(label);
+      });
+      return panel;
     }
 
     // 元データを参照解放
@@ -155,25 +227,63 @@
     if (!Graph) {
       console.error('ForceGraph3D not available'); hideLoader(); return;
     }
-
-    const GraphInstance = Graph()(container)
-      .graphData({ nodes, links })
-      .nodeLabel(node => `${node.name} (${node.id})`)
-      // nodeAutoColorBy は使わず config.json の色を使う
-      .linkDirectionalParticles(0)
-      .backgroundColor('#07080a')
-      .onNodeClick(node => {
-        // Aim at node from outside it (sample behaviour): compute a position
-        // a fixed distance away from the node and smoothly move the camera there.
-        const distance = 40;
-        const distRatio = 1 + distance / Math.hypot(node.x || 0, node.y || 0, node.z || 0);
-        const newPos = (node.x || node.y || node.z)
-          ? { x: (node.x || 0) * distRatio, y: (node.y || 0) * distRatio, z: (node.z || 0) * distRatio }
-          : { x: 0, y: 0, z: distance }; // if node at origin, place camera at +z distance
-
-        // 3000 ms transition to the new position and look at the node
-        GraphInstance.cameraPosition(newPos, node, 3000);
+    let GraphInstance = null;
+    function updateGraph() {
+      const { nodes, links } = filterNodesAndLinks();
+      if (!GraphInstance) {
+        GraphInstance = Graph()(container)
+          .graphData({ nodes, links })
+          .nodeLabel(node => `${node.name} (${node.id})`)
+          .linkDirectionalParticles(0)
+          .backgroundColor('#07080a')
+          .onNodeClick(node => {
+            const distance = 40;
+            const distRatio = 1 + distance / Math.hypot(node.x || 0, node.y || 0, node.z || 0);
+            const newPos = (node.x || node.y || node.z)
+              ? { x: (node.x || 0) * distRatio, y: (node.y || 0) * distRatio, z: (node.z || 0) * distRatio }
+              : { x: 0, y: 0, z: distance };
+            GraphInstance.cameraPosition(newPos, node, 3000);
+          });
+      } else {
+        GraphInstance.graphData({ nodes, links });
+      }
+    }
+    updateGraph();
+    // --- フィルタパネルをUI下部に追加 ---
+    setTimeout(() => {
+      const ui = container.querySelector('div'); // 既存UI
+      const filterPanel = createFilterPanel();
+      filterPanel.id = 'd3fg-filter-panel';
+      filterPanel.style.marginTop = '12px';
+      // UIの下に追加
+      if (ui && ui.parentNode) {
+        ui.parentNode.insertBefore(filterPanel, ui.nextSibling);
+      } else {
+        container.appendChild(filterPanel);
+      }
+      // types チェックボックスイベント
+      allTypes.forEach(type => {
+        const cb = filterPanel.querySelector(`#d3fg-type-${type}`);
+        if (cb) {
+          cb.addEventListener('change', () => {
+            if (cb.checked) enabledTypes.add(type); else enabledTypes.delete(type);
+            saveFilterState('d3fg_enabled_types', enabledTypes);
+            updateGraph();
+          });
+        }
       });
+      // status チェックボックスイベント
+      allStatus.forEach(status => {
+        const cb = filterPanel.querySelector(`#d3fg-status-${status}`);
+        if (cb) {
+          cb.addEventListener('change', () => {
+            if (cb.checked) enabledStatus.add(status); else enabledStatus.delete(status);
+            saveFilterState('d3fg_enabled_status', enabledStatus);
+            updateGraph();
+          });
+        }
+      });
+    }, 100);
 
     // --- UI: ラベル表示切替とノードサイズ倍率 ---
     (function setupUI() {
