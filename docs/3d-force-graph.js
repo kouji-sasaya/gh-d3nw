@@ -346,12 +346,6 @@
           <input type='range' id='d3fg-lod-interval' min='50' max='1000' step='25' value='200' style='width:160px'>
         </label>
         <hr style='border:none;border-top:1px solid rgba(255,255,255,0.06);margin:8px 0'>
-        <label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-          <input type='checkbox' id='d3fg-auto-orbit' /> 自動回転 (左→右)
-        </label>
-        <label style="display:block">回転スピード: <span id='d3fg-auto-orbit-speed-val'>0.25</span>
-          <input type='range' id='d3fg-auto-orbit-speed' min='0' max='3' step='0.05' value='0.25' style='width:160px'>
-        </label>
       `;
       container.appendChild(ui);
 
@@ -371,9 +365,7 @@
       const lodVal = ui.querySelector('#d3fg-lod-val');
       const lodIntervalEl = ui.querySelector('#d3fg-lod-interval');
       const lodIntervalVal = ui.querySelector('#d3fg-lod-interval-val');
-  const autoOrbitChk = ui.querySelector('#d3fg-auto-orbit');
-  const autoOrbitSpeed = ui.querySelector('#d3fg-auto-orbit-speed');
-  const autoOrbitSpeedVal = ui.querySelector('#d3fg-auto-orbit-speed-val');
+  // ...existing code...
 
       // 設定を localStorage から復元
       const savedLabel = localStorage.getItem('d3fg_label_visible');
@@ -381,16 +373,14 @@
       const savedLODEn = localStorage.getItem('d3fg_lod_enabled');
       const savedLODDist = localStorage.getItem('d3fg_lod_distance');
       const savedLODInterval = localStorage.getItem('d3fg_lod_interval');
-  const savedAutoOrbit = localStorage.getItem('d3fg_auto_orbit');
-  const savedAutoOrbitSpeed = localStorage.getItem('d3fg_auto_orbit_speed');
+  // ...existing code...
 
       if (savedLabel !== null) chk.checked = savedLabel === '1'; else chk.checked = true;
   if (savedScale !== null) { range.value = savedScale; val.textContent = parseFloat(savedScale).toFixed(2); } else { range.value = '0.40'; val.textContent = '0.40'; }
       if (savedLODEn !== null) lodToggle.checked = savedLODEn === '1'; else lodToggle.checked = true;
       if (savedLODDist !== null) { lodRange.value = savedLODDist; lodVal.textContent = parseFloat(savedLODDist).toFixed(0); }
       if (savedLODInterval !== null) { lodIntervalEl.value = savedLODInterval; lodIntervalVal.textContent = parseInt(savedLODInterval,10); }
-  if (savedAutoOrbit !== null) autoOrbitChk.checked = savedAutoOrbit === '1'; else autoOrbitChk.checked = false;
-  if (savedAutoOrbitSpeed !== null) { autoOrbitSpeed.value = savedAutoOrbitSpeed; autoOrbitSpeedVal.textContent = parseFloat(savedAutoOrbitSpeed).toFixed(2); }
+  // ...existing code...
   // bloom 設定を復元
   const savedBloom = localStorage.getItem('d3fg_bloom_enabled');
   const savedBloomStrength = localStorage.getItem('d3fg_bloom_strength');
@@ -493,18 +483,7 @@
         localStorage.setItem('d3fg_lod_interval', String(v));
       });
 
-      // Auto-orbit UI handlers
-      autoOrbitChk.addEventListener('change', () => {
-        localStorage.setItem('d3fg_auto_orbit', autoOrbitChk.checked ? '1' : '0');
-        // if controls already exist, toggle immediately
-        try { if (GraphInstance.__orbitControls) GraphInstance.__orbitControls.autoRotate = autoOrbitChk.checked; } catch(e){}
-      });
-      autoOrbitSpeed.addEventListener('input', () => {
-        const v = parseFloat(autoOrbitSpeed.value);
-        autoOrbitSpeedVal.textContent = v.toFixed(2);
-        localStorage.setItem('d3fg_auto_orbit_speed', String(v));
-        try { if (GraphInstance.__orbitControls) GraphInstance.__orbitControls.autoRotateSpeed = v; } catch(e){}
-      });
+      // ...existing code...
 
       // --- Bloom UI イベント ---
       bloomChk.addEventListener('change', async () => {
@@ -785,67 +764,33 @@
           controls.rotateSpeed = 0.6;
           controls.zoomSpeed = 1.0;
           controls.panSpeed = 0.8;
-          // expose controls for UI to toggle auto-rotate
           GraphInstance.__orbitControls = controls;
-          // GraphInstance の tick で controls.update を呼ぶ
           const origTick = GraphInstance._tick;
-          // manual orbit fallback state
-          let lastAutoRotateTime = 0;
-            GraphInstance._tick = function() {
-              try { controls.update(); } catch (e) {}
-              // if auto-rotate enabled via UI, try to use OrbitControls.autoRotate, but also
-              // provide a manual fallback rotation in case autoRotate isn't effective.
-              try {
-                const auto = localStorage.getItem('d3fg_auto_orbit');
-                const sp = parseFloat(localStorage.getItem('d3fg_auto_orbit_speed')) || 0.25;
-                // keep OrbitControls flags in sync for normal behavior
-                try { if (auto !== null) controls.autoRotate = auto === '1'; } catch(e){}
-                try { controls.autoRotateSpeed = sp; } catch(e){}
-
-                // manual fallback: if UI requests auto-orbit, rotate camera around controls.target
-                if (auto === '1') {
-                  const now = performance.now();
-                  if (!lastAutoRotateTime) lastAutoRotateTime = now;
-                  const dt = Math.max(0, (now - lastAutoRotateTime) / 1000);
-                  lastAutoRotateTime = now;
-                  // angle per second: scale UI speed to a comfortable rad/s (0.25 -> ~0.5 rad/s)
-                  const angPerSec = sp * 2.0; // empirical scaling
-                  const ang = angPerSec * dt;
-                  try {
-                    const target = controls.target ? controls.target.clone() : new THREE.Vector3(0,0,0);
-                    const camPos = threeCamera.position.clone().sub(target);
-                    const cos = Math.cos(ang), sin = Math.sin(ang);
-                    const x = camPos.x * cos - camPos.z * sin;
-                    const z = camPos.x * sin + camPos.z * cos;
-                    camPos.x = x; camPos.z = z;
-                    threeCamera.position.copy(camPos.add(target));
-                    threeCamera.lookAt(target);
-                  } catch (e) {}
+          GraphInstance._tick = function() {
+            try { controls.update(); } catch (e) {}
+            // If selective bloom is prepared and enabled, render in two passes:
+            // 1) render bloom layer (layer 1) into bloomComposer
+            // 2) render full scene into finalComposer (which will composite over screen)
+            try {
+              if (bloomComposer && finalComposer && bloomEnabled()) {
+                const renderer = threeRenderer;
+                const camera = threeCamera;
+                try {
+                  // 1) replace non-bloom materials with dark / hide sprites
+                  replaceMaterialsForBloom();
+                  // 2) render bloomComposer which now only contains bright/bloom objects
+                  bloomComposer.render();
+                } finally {
+                  // 3) restore original materials
+                  restoreMaterials();
                 }
-              } catch (e) {}
-              // If selective bloom is prepared and enabled, render in two passes:
-              // 1) render bloom layer (layer 1) into bloomComposer
-              // 2) render full scene into finalComposer (which will composite over screen)
-              try {
-                if (bloomComposer && finalComposer && bloomEnabled()) {
-                  const renderer = threeRenderer;
-                  const camera = threeCamera;
-                  try {
-                    // 1) replace non-bloom materials with dark / hide sprites
-                    replaceMaterialsForBloom();
-                    // 2) render bloomComposer which now only contains bright/bloom objects
-                    bloomComposer.render();
-                  } finally {
-                    // 3) restore original materials
-                    restoreMaterials();
-                  }
-                  // 4) render final scene to screen
-                  finalComposer.render();
-                  return; // skip original rendering
-                }
-              } catch (e) {}
-              if (origTick) origTick.apply(this, arguments);
-            };
+                // 4) render final scene to screen
+                finalComposer.render();
+                return; // skip original rendering
+              }
+            } catch (e) {}
+            if (origTick) origTick.apply(this, arguments);
+          };
         }
       } catch (e) {
         console.warn('OrbitControls の初期化に失敗しました', e);
