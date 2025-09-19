@@ -62,8 +62,18 @@ export async function init() {
   const idMap = new Map();
   const nodesRaw = raw.map((d) => {
     const node = { id: d.id, name: d.name || d.id, type: d.type || 'node', status: d.status || '', address: d.address || '' };
+    // apply type-level config if available
     const tcfg = cfg && cfg.config && cfg.config.types && cfg.config.types[node.type];
-    if (tcfg) { node._size = tcfg.size; node._color = tcfg.color; } else { node._size = 50; node._color = '#aaaaaa'; }
+    if (tcfg) {
+      node._size = tcfg.size;
+      node._color = tcfg.color;
+    } else {
+      node._size = 50;
+      node._color = '#aaaaaa';
+    }
+    // allow per-node overrides from data.json (d.size / d.color)
+    if (d.size !== undefined && d.size !== null) node._size = d.size;
+    if (d.color) node._color = d.color;
     idMap.set(d.id, node);
     return node;
   });
@@ -113,7 +123,22 @@ export async function init() {
   const Graph = (typeof ForceGraph3D !== 'undefined') ? ForceGraph3D : window.ForceGraph3D;
   if (!Graph) { console.error('ForceGraph3D not available'); hideLoader(); return; }
   let GraphInstance = null;
-  function updateGraph(){ const {nodes, links} = filterNodesAndLinks(); if (!GraphInstance) { GraphInstance = Graph()(container).graphData({nodes,links}).nodeLabel(n=>`${n.name} (${n.id})`).linkDirectionalParticles(0).backgroundColor('#07080a'); } else { GraphInstance.graphData({nodes,links}); } }
+  function updateGraph(){
+    const {nodes, links} = filterNodesAndLinks();
+    if (!GraphInstance) {
+      GraphInstance = Graph()(container)
+        .graphData({ nodes, links })
+        .nodeLabel(n => `${n.name} (${n.id})`)
+        .nodeColor(n => n._color || '#aaaaaa')
+        .nodeVal(n => n._size || 50)
+        .linkDirectionalParticles(0)
+        .backgroundColor('#07080a');
+    } else {
+      GraphInstance.graphData({nodes,links});
+      // ensure color/size functions are set (in case config changed)
+      GraphInstance.nodeColor(n => n._color || '#aaaaaa').nodeVal(n => n._size || 50);
+    }
+  }
   updateGraph();
 
   raw = null;
