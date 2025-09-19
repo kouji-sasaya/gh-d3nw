@@ -201,7 +201,18 @@
             loadScript('forcelayout.js');
             break;
           case 'menu-force3d':
-            loadScript('3d-force-graph.js');
+            // Load the ES module version of the 3D force graph and call init()
+            (async function(){
+              document.querySelector("#canvas").innerHTML = "<svg></svg>";
+              try {
+                const mod = await import('./network-graph-3d.js?v=' + Date.now());
+                if (mod && typeof mod.init === 'function') await mod.init();
+              } catch (e) {
+                console.error('Failed to load 3d-force-graph module', e);
+                // fallback to legacy loader
+                loadScript('3d-force-graph.js');
+              }
+            })();
             break;
           case 'menu-sunburst':
             loadScript('sunburst.js');
