@@ -139,7 +139,132 @@ export async function init() {
       GraphInstance.nodeColor(n => n._color || '#aaaaaa').nodeVal(n => n._size || 50);
     }
   }
+  
+  // enhance labels: create sprites and higher-visibility labels with scaling controls
+  function makeLabelSprite(text, color, fontSize = 64) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    // choose large base font for clarity; will be scaled down in world units
+    ctx.font = `bold ${fontSize}px sans-serif`;
+    const padding = Math.round(fontSize * 0.28);
+    const metrics = ctx.measureText(text);
+    const textWidth = Math.ceil(metrics.width);
+    canvas.width = textWidth + padding * 2;
+    canvas.height = fontSize + padding * 2;
+    // redraw with proper sizing
+    ctx.font = `bold ${fontSize}px sans-serif`;
+    // background: slightly translucent dark to improve contrast
+    ctx.fillStyle = 'rgba(8,10,16,0.72)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // text
+    ctx.fillStyle = color || '#ffffff';
+    ctx.textBaseline = 'top';
+    ctx.fillText(text, padding, padding);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.minFilter = THREE.LinearFilter;
+    const mat = new THREE.SpriteMaterial({ map: tex, depthTest: false, depthWrite: false });
+    const sprite = new THREE.Sprite(mat);
+    // initial scale in world units (will be adjusted by multiplier)
+    sprite.scale.set(canvas.width / 30, canvas.height / 30, 1);
+    sprite.renderOrder = 9999;
+    return sprite;
+  }
+
+  function attachLabelsAndNodeObject() {
+    if (!GraphInstance) return;
+    // create Three object per node for consistent sizing and label sprites
+    GraphInstance.nodeThreeObject(node => {
+      const rawSize = node._size || 50;
+      // derive visible sphere radius from configured size (tune constants for readability)
+      const a = 1.1, b = 0.6;
+      const baseSize = Math.max(0.9, a + b * Math.sqrt(rawSize));
+
+      const geometry = new THREE.SphereGeometry(baseSize, 12, 12);
+      const colorHex = node._color || '#ffffff';
+      const material = new THREE.MeshStandardMaterial({ color: new THREE.Color(colorHex), roughness: 0.6, metalness: 0.1 });
+      const mesh = new THREE.Mesh(geometry, material);
+
+      const group = new THREE.Group();
+      group.add(mesh);
+
+      // create label sprite with larger font for readability
+      const label = makeLabelSprite(node.name || node.id, '#eef2ff', 64);
+      // position label slightly above node
+      label.position.set(0, baseSize + 0.9, 0);
+      // scale label relative to node size so large nodes keep readable labels
+      const scaleFactor = Math.max(0.8, baseSize / 2.6);
+      label.scale.multiplyScalar(scaleFactor);
+      group.add(label);
+
+      // save for UI operations
+      node.__labelSprite = label;
+      node.__threeObj = group;
+
+      return group;
+    });
+
+    // hover: enlarge label for readability
+    let prevHover = null;
+    GraphInstance.onNodeHover(node => {
+      if (prevHover && prevHover.__labelSprite) {
+        try { prevHover.__labelSprite.scale.setScalar(1.0); } catch(e){}
+      }
+      if (node && node.__labelSprite) {
+        try { node.__labelSprite.scale.multiplyScalar(1.8); } catch(e){}
+      }
+      prevHover = node;
+    });
+
+    // apply initial label visibility and size multiplier UI (create controls)
+    (function setupLabelUI() {
+      const ui = document.createElement('div');
+      ui.style.position = 'absolute';
+      ui.style.left = '12px';
+      ui.style.top = '12px';
+      ui.style.zIndex = 10000;
+      ui.style.background = 'rgba(12,14,20,0.6)';
+      ui.style.color = '#eef2ff';
+      ui.style.padding = '8px 10px';
+      ui.style.borderRadius = '8px';
+      ui.style.fontSize = '13px';
+      ui.innerHTML = `
+          <label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <input type='checkbox' id='d3fg-label-toggle' checked /> ラベル表示
+          </label>
+        `;
+      container.appendChild(ui);
+
+      const chk = ui.querySelector('#d3fg-label-toggle');
+      // helper to show/hide labels
+      function applyLabelVisibility(visible) {
+        try { GraphInstance.graphData().nodes.forEach(n => { if (n && n.__labelSprite) n.__labelSprite.visible = !!visible; }); } catch(e){}
+      }
+
+      // restore saved visibility
+      const savedLabel = localStorage.getItem('d3fg_label_visible');
+      if (savedLabel !== null) chk.checked = savedLabel === '1'; else chk.checked = true;
+
+      applyLabelVisibility(chk.checked);
+
+      chk.addEventListener('change', () => {
+        localStorage.setItem('d3fg_label_visible', chk.checked ? '1' : '0');
+        applyLabelVisibility(chk.checked);
+      });
+
+      // reapply label visibility after graphData() updates
+      const origGraphData = GraphInstance.graphData;
+      GraphInstance.graphData = function() {
+        const res = origGraphData.apply(this, arguments);
+        setTimeout(() => { applyLabelVisibility(chk.checked); }, 50);
+        return res;
+      };
+    })();
+  }
+
   updateGraph();
+
+  // attach label sprites and node objects after graph instance is ready
+  try { attachLabelsAndNodeObject(); } catch(e){ console.warn('attachLabelsAndNodeObject failed', e); }
 
   raw = null;
   // hide loader once first frame renders
