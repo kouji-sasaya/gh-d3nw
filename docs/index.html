@@ -72,7 +72,49 @@
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
 
+    <!-- Import map to resolve bare specifier 'three' used by examples/jsm modules -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.module.js"
+        }
+      }
+    </script>
+
+    <script type="module">
+      // Import three.js module build and OrbitControls and expose them early.
+      // Do NOT import ForceGraph3D here to avoid CORS/404 for module build.
+  import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.module.js';
+  import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.153.0/examples/jsm/controls/OrbitControls.js';
+  // Note: do NOT import the 3d-force-graph ES module here because its
+  // dependency graph (ngraph.forcelayout v3) may not provide a default export
+  // expected by the module entry. Instead we expose THREE first and then
+  // dynamically load the UMD build as a safe fallback below if needed.
+  // THREE is an imported module namespace and may be non-extensible.
+  // Create an extensible wrapper that delegates to the real THREE via prototype
+  // so existing UMD code can write/read properties like THREE.OrbitControls.
+  const THREE_WRAPPER = Object.create(THREE);
+  // attach OrbitControls onto the wrapper so UMD code expecting THREE.OrbitControls works
+  if (!THREE_WRAPPER.OrbitControls) THREE_WRAPPER.OrbitControls = OrbitControls;
+  window.THREE = THREE_WRAPPER;
+  // Expose module ForceGraph3D to globals so existing UMD-less code uses it
+  // and doesn't trigger a second three import.
+  // window.ForceGraph3D will be populated by the UMD build if not provided.
+    </script>
+
     <script>
+      // If ForceGraph3D isn't provided by an ESM import, load the UMD build as fallback.
+      (function(){
+        if (typeof ForceGraph3D !== 'undefined' || typeof window.ForceGraph3D !== 'undefined') return;
+        var s = document.createElement('script');
+        s.src = 'https://unpkg.com/3d-force-graph/dist/3d-force-graph.min.js';
+        s.async = false;
+        s.onload = function() { console.log('Loaded UMD 3d-force-graph'); };
+        s.onerror = function() { console.warn('Failed to load UMD 3d-force-graph'); };
+        document.head.appendChild(s);
+      })();
+
+    
       // JSファイルを動的に読み込む関数
       function loadScript(jsFile, isModule = false) {
         document.querySelector("#canvas").innerHTML = "<svg></svg>";
@@ -193,5 +235,6 @@
         }
       });
     </script>
+    
   </body>
 </html>

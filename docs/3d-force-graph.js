@@ -116,7 +116,9 @@
         const v = localStorage.getItem(key);
         if (!v) return new Set(all);
         const arr = JSON.parse(v);
-        return new Set(Array.isArray(arr) ? arr : all);
+        // 空配列や不正値の場合は all を使う
+        if (!Array.isArray(arr) || arr.length === 0) return new Set(all);
+        return new Set(arr);
       } catch (e) { return new Set(all); }
     }
     function saveFilterState(key, set) {
@@ -126,17 +128,22 @@
     let enabledStatus = loadFilterState('d3fg_enabled_status', allStatus);
     // --- フィルタ適用関数 ---
     function filterNodesAndLinks() {
-      // typeフィルタ: domain, project, service, user
-      // statusフィルタ: userノードのみ
       const nodes = nodesRaw.filter(n => {
         if (!enabledTypes.has(n.type)) return false;
         if (n.type === 'user') {
           return enabledStatus.has(n.status);
         }
-        return true; // domain, project, service
+        return true;
       });
       const nodeIds = new Set(nodes.map(n => n.id));
       const links = linksRaw.filter(l => nodeIds.has(l.source) && nodeIds.has(l.target));
+      // デバッグ出力
+      console.log('filterNodesAndLinks:', {
+        enabledTypes: Array.from(enabledTypes),
+        enabledStatus: Array.from(enabledStatus),
+        nodes: nodes.map(n => n.id),
+        links: links.map(l => [l.source, l.target])
+      });
       return { nodes, links };
     }
     // --- UI生成関数 ---
@@ -250,6 +257,12 @@
           });
       } else {
         GraphInstance.graphData({ nodes, links });
+        // ここで Three.js のレンダリングを強制
+        try {
+          if (GraphInstance.renderer) {
+            GraphInstance.renderer().render(GraphInstance.scene(), GraphInstance.camera());
+          }
+        } catch (e) {}
       }
     }
     updateGraph();
@@ -482,8 +495,6 @@
         lodIntervalVal.textContent = v;
         localStorage.setItem('d3fg_lod_interval', String(v));
       });
-
-      // ...existing code...
 
       // --- Bloom UI イベント ---
       bloomChk.addEventListener('change', async () => {
@@ -930,6 +941,8 @@
     // nodes/links は GraphInstance にコピーされているため raw は null にしておく
     // ここではすでに raw = null
 
+    // 修正: nodes, links は filterNodesAndLinks() で取得
+    const { nodes, links } = filterNodesAndLinks();
     console.log('3d-force-graph: nodes=', nodes.length, 'links=', links.length);
   }
 
