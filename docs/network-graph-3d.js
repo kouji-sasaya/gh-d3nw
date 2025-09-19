@@ -161,12 +161,20 @@ export async function init() {
     ctx.textBaseline = 'top';
     ctx.fillText(text, padding, padding);
     const tex = new THREE.CanvasTexture(canvas);
+    // ensure texture is updated from the canvas
+    tex.needsUpdate = true;
     tex.minFilter = THREE.LinearFilter;
-    const mat = new THREE.SpriteMaterial({ map: tex, depthTest: false, depthWrite: false });
+    // allow transparency and render on top
+    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, depthWrite: false });
     const sprite = new THREE.Sprite(mat);
     // initial scale in world units (will be adjusted by multiplier)
     sprite.scale.set(canvas.width / 30, canvas.height / 30, 1);
     sprite.renderOrder = 9999;
+    // prevent automatic frustum culling which can hide small sprites at edges
+    sprite.frustumCulled = false;
+    // store base scale to allow hover to restore correctly
+    sprite.userData = sprite.userData || {};
+    sprite.userData.baseScale = sprite.scale.clone();
     return sprite;
   }
 
@@ -207,10 +215,18 @@ export async function init() {
     let prevHover = null;
     GraphInstance.onNodeHover(node => {
       if (prevHover && prevHover.__labelSprite) {
-        try { prevHover.__labelSprite.scale.setScalar(1.0); } catch(e){}
+        try {
+          const s = prevHover.__labelSprite;
+          if (s.userData && s.userData.baseScale) s.scale.copy(s.userData.baseScale);
+          else s.scale.setScalar(1.0);
+        } catch (e) {}
       }
       if (node && node.__labelSprite) {
-        try { node.__labelSprite.scale.multiplyScalar(1.8); } catch(e){}
+        try {
+          const s = node.__labelSprite;
+          if (s.userData && s.userData.baseScale) s.scale.copy(s.userData.baseScale).multiplyScalar(1.8);
+          else s.scale.multiplyScalar(1.8);
+        } catch (e) {}
       }
       prevHover = node;
     });
@@ -259,6 +275,11 @@ export async function init() {
         return res;
       };
     })();
+    // Re-apply current graphData to ensure nodeThreeObject is invoked for existing nodes
+    try {
+      const cur = GraphInstance && GraphInstance.graphData && GraphInstance.graphData();
+      if (cur) GraphInstance.graphData(cur);
+    } catch (e) {}
   }
 
   updateGraph();
