@@ -231,50 +231,19 @@ export async function init() {
       prevHover = node;
     });
 
-    // apply initial label visibility and size multiplier UI (create controls)
-    (function setupLabelUI() {
-      const ui = document.createElement('div');
-      ui.style.position = 'absolute';
-      ui.style.left = '12px';
-      ui.style.top = '12px';
-      ui.style.zIndex = 10000;
-      ui.style.background = 'rgba(12,14,20,0.6)';
-      ui.style.color = '#eef2ff';
-      ui.style.padding = '8px 10px';
-      ui.style.borderRadius = '8px';
-      ui.style.fontSize = '13px';
-      ui.innerHTML = `
-          <label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-            <input type='checkbox' id='d3fg-label-toggle' checked /> ラベル表示
-          </label>
-        `;
-      container.appendChild(ui);
-
-      const chk = ui.querySelector('#d3fg-label-toggle');
-      // helper to show/hide labels
-      function applyLabelVisibility(visible) {
-        try { GraphInstance.graphData().nodes.forEach(n => { if (n && n.__labelSprite) n.__labelSprite.visible = !!visible; }); } catch(e){}
-      }
-
-      // restore saved visibility
-      const savedLabel = localStorage.getItem('d3fg_label_visible');
-      if (savedLabel !== null) chk.checked = savedLabel === '1'; else chk.checked = true;
-
-      applyLabelVisibility(chk.checked);
-
-      chk.addEventListener('change', () => {
-        localStorage.setItem('d3fg_label_visible', chk.checked ? '1' : '0');
-        applyLabelVisibility(chk.checked);
-      });
-
-      // reapply label visibility after graphData() updates
-      const origGraphData = GraphInstance.graphData;
-      GraphInstance.graphData = function() {
-        const res = origGraphData.apply(this, arguments);
-        setTimeout(() => { applyLabelVisibility(chk.checked); }, 50);
-        return res;
-      };
-    })();
+    // Ensure labels are visible by default and reapply visibility after graphData updates
+    function applyLabelVisibility(visible) {
+      try { GraphInstance.graphData().nodes.forEach(n => { if (n && n.__labelSprite) n.__labelSprite.visible = !!visible; }); } catch(e){}
+    }
+    // show labels by default
+    applyLabelVisibility(true);
+    // reapply after graphData updates
+    const origGraphData = GraphInstance.graphData;
+    GraphInstance.graphData = function() {
+      const res = origGraphData.apply(this, arguments);
+      setTimeout(() => { applyLabelVisibility(true); }, 50);
+      return res;
+    };
     // Re-apply current graphData to ensure nodeThreeObject is invoked for existing nodes
     try {
       const cur = GraphInstance && GraphInstance.graphData && GraphInstance.graphData();
